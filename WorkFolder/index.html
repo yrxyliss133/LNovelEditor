@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>薰衣草夜 · 小说编辑器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" class="app-shell">
+
+  <!-- ========== 视图 1：主页 / 书本列表 ========== -->
+  <section class="view active" id="view-books">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-mark">✿</span>
+      </div>
+      <div class="topbar-title">
+        <h1>我的书阁</h1>
+        <p>薰衣草夜 · 静心写作 <span class="pwa-badge" id="pwa-badge" hidden></span></p>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="btn-import-json" title="导入书本 JSON">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="icon-btn accent" id="btn-new-book" title="创建小说书本">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+    <!-- IndexedDB 容量条 -->
+    <div class="storage-bar" id="storage-bar">
+      <div class="sb-track" id="sb-track">
+        <div class="sb-fill" id="sb-fill"></div>
+      </div>
+      <div class="sb-text" id="sb-text">0 KB / 128 MB</div>
+      <button class="sb-cap-btn" id="sb-cap-btn" title="切换容量上限">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </button>
+    </div>
+    <main class="scroll-area" id="books-list"></main>
+    <div class="empty-hint" id="books-empty" hidden>
+      <div class="empty-icon">✿</div>
+      <p>还没有书本</p>
+      <span>点击右上角 ＋ 开始你的第一部小说</span>
+    </div>
+  </section>
+
+  <!-- ========== 视图 2：章节管理 / 文件管理器 ========== -->
+  <section class="view" id="view-chapters">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-books" title="返回书阁">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title">
+        <h1 id="chapter-book-title">书名</h1>
+        <p id="chapter-breadcrumb">根目录</p>
+      </div>
+      <div class="topbar-right" id="chapter-actions"></div>
+    </header>
+    <main class="scroll-area" id="chapter-list"></main>
+  </section>
+
+  <!-- ========== 视图 3：写作编辑器 ========== -->
+  <section class="view" id="view-editor">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-chapters" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="editor-title" class="editor-title-input" type="text" placeholder="章节标题" autocomplete="off">
+        <span class="editor-kind-tag" id="editor-kind-tag" hidden></span>
+      </div>
+      <div class="topbar-right">
+        <div class="word-count-chip" id="editor-count"><b>0</b><span>字</span></div>
+      </div>
+    </header>
+    <main class="scroll-area editor-area">
+      <textarea id="editor-body" class="editor-body" placeholder="在这里写下你的故事……&#10;&#10;夜色如薰衣草般铺开。" spellcheck="false"></textarea>
+      <div class="editor-status" id="editor-status">已保存</div>
+    </main>
+  </section>
+
+  <!-- ========== 视图 4：时间线编辑器 ========== -->
+  <section class="view" id="view-timeline">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-timeline" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="timeline-title" class="editor-title-input" type="text" placeholder="时间线名称" autocomplete="off">
+        <span class="editor-kind-tag">🕰 时间线</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn accent" id="btn-new-event" title="创建新事件">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="tl-head">
+      <span class="tl-col-time">时间</span>
+      <span class="tl-col-text">事件</span>
+    </div>
+    <main class="scroll-area tl-area" id="timeline-list"></main>
+  </section>
+
+  <!-- ========== 视图 5：设定编辑器（分类列表） ========== -->
+  <section class="view" id="view-setting">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-setting" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="setting-title" class="editor-title-input" type="text" placeholder="设定名称" autocomplete="off">
+        <span class="editor-kind-tag" id="setting-kind-tag">👤 人物设定</span>
+      </div>
+      <div class="topbar-right">
+        <div class="word-count-chip" id="setting-count"><b>0</b><span>字</span></div>
+        <button class="icon-btn accent" id="btn-new-category" title="创建分类">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+    <main class="scroll-area set-area" id="category-list"></main>
+  </section>
+
+  <!-- ========== 视图 6：全局搜索 ========== -->
+  <section class="view" id="view-search">
+    <header class="topbar search-topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-search" title="返回">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title">
+        <input id="search-input" class="search-input" type="search" placeholder="搜索文件夹与文件…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="btn-clear-search" title="清空" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="search-modes">
+      <button class="mode-btn active" id="mode-name" data-mode="name">
+        <span class="mb-icon">🏷</span><span>文件名搜索</span>
+      </button>
+      <button class="mode-btn" id="mode-full" data-mode="full">
+        <span class="mb-icon">📖</span><span>全文搜索</span>
+      </button>
+    </div>
+
+    <div class="search-status" id="search-status"></div>
+    <main class="scroll-area search-area" id="search-results"></main>
+  </section>
+
+</div>
+
+<!-- ========== 通用悬浮窗 ========== -->
+<div class="overlay" id="modal-overlay" hidden>
+  <div class="modal" id="modal-box">
+    <h3 class="modal-title" id="modal-title">标题</h3>
+    <p class="modal-desc" id="modal-desc" hidden></p>
+
+    <div class="modal-fields" id="modal-fields"></div>
+
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ========== 长按菜单 ========== -->
+<div class="overlay sheet-overlay" id="sheet-overlay" hidden>
+  <div class="action-sheet" id="action-sheet">
+    <div class="sheet-head" id="sheet-head"></div>
+    <div class="sheet-items" id="sheet-items"></div>
+  </div>
+</div>
+
+<!-- ========== 轻提示 ========== -->
+<div class="toast" id="toast" hidden></div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script src="timeline.js"></script>
+<script src="setting.js"></script>
+<script src="export.js"></script>
+<script src="backup.js"></script>
+<script src="search.js"></script>
+<script src="storage.js"></script>
+<script src="native.js"></script>
+<script src="pwa.js"></script>
+</body>
+</html>

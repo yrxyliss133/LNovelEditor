@@ -1,0 +1,4431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>薰衣草夜 · 小说编辑器</title>
+<style>
+/* ============================================================
+   薰衣草夜 · 小说编辑器 — INFP 深紫夜晚主题
+   ============================================================ */
+
+:root {
+  --lav-0:   #0b0714;
+  --lav-1:   #110b1f;
+  --lav-2:   #17102a;
+  --lav-3:   #1e1636;
+  --lav-4:   #271c45;
+  --lav-5:   #342455;
+
+  --purple-soft: #a58bff;
+  --purple-mid:  #8b6ff0;
+  --purple-deep: #6c4fd0;
+  --lilac:       #c9b6ff;
+  --mist:        #d9cfff;
+  --lav-glow:    rgba(165,139,255,0.28);
+
+  --text-1: #ece6ff;
+  --text-2: #b3a7d4;
+  --text-3: #7a6d9e;
+
+  --line:   rgba(165,139,255,0.14);
+  --line-2: rgba(165,139,255,0.24);
+
+  --danger: #ff6b93;
+  --ok:     #8ee0c0;
+
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 10px;
+
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--lav-0);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+               "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  color: var(--text-1);
+  font-size: 15px;
+  line-height: 1.6;
+  background:
+    radial-gradient(120% 70% at 78% -12%, rgba(165,139,255,0.20) 0%, transparent 58%),
+    radial-gradient(90% 55% at 8% 4%,  rgba(108,79,208,0.16) 0%, transparent 62%),
+    radial-gradient(140% 80% at 50% 118%, rgba(139,111,240,0.20) 0%, transparent 60%),
+    linear-gradient(178deg, var(--lav-2) 0%, var(--lav-1) 42%, var(--lav-0) 100%);
+  background-attachment: fixed;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 星点层 */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.4px 1.4px at 18% 12%, rgba(217,207,255,0.55), transparent),
+    radial-gradient(1.2px 1.2px at 72% 8%,  rgba(217,207,255,0.42), transparent),
+    radial-gradient(1.6px 1.6px at 41% 26%, rgba(201,182,255,0.34), transparent),
+    radial-gradient(1.1px 1.1px at 88% 31%, rgba(217,207,255,0.38), transparent),
+    radial-gradient(1.3px 1.3px at 9%  44%, rgba(201,182,255,0.28), transparent),
+    radial-gradient(1.1px 1.1px at 61% 55%, rgba(217,207,255,0.22), transparent);
+  opacity: .8;
+}
+
+/* ================= 布局 ================= */
+.app-shell { position: relative; height: 100%; }
+
+.view {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+.view.active { display: flex; animation: viewIn .32s cubic-bezier(.22,1,.36,1); }
+
+@keyframes viewIn {
+  from { opacity: 0; transform: translateY(10px) scale(.995); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ================= 顶栏 ================= */
+.topbar {
+  position: relative; z-index: 5;
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 12px;
+  padding: calc(var(--safe-t) + 14px) 16px 14px;
+  background: linear-gradient(180deg, rgba(23,16,42,0.94) 0%, rgba(23,16,42,0.72) 70%, transparent 100%);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-left, .topbar-right { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.topbar-title { flex: 1 1 auto; min-width: 0; }
+
+.topbar-title h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: linear-gradient(100deg, var(--mist) 0%, var(--lilac) 45%, var(--purple-soft) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.topbar-title p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: .8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.logo-mark {
+  font-size: 22px;
+  color: var(--lilac);
+  text-shadow: 0 0 16px var(--lav-glow);
+  display: inline-block;
+  animation: breathe 5s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100% { opacity: .72; transform: scale(1); }
+  50%     { opacity: 1;   transform: scale(1.07); }
+}
+
+/* ================= 按钮 ================= */
+.icon-btn {
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(52,36,85,0.42);
+  color: var(--lilac);
+  cursor: pointer;
+  transition: transform .16s, background .2s, box-shadow .2s, border-color .2s;
+  flex: 0 0 auto;
+}
+.icon-btn:active { transform: scale(.9); background: rgba(108,79,208,0.5); }
+.icon-btn.accent {
+  background: linear-gradient(145deg, var(--purple-mid), var(--purple-deep));
+  border-color: rgba(201,182,255,0.4);
+  color: #fff;
+  box-shadow: 0 6px 22px rgba(108,79,208,0.45), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.icon-btn.accent:active { box-shadow: 0 2px 10px rgba(108,79,208,0.5); }
+
+/* ================= 滚动区 ================= */
+.scroll-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 16px calc(var(--safe-b) + 40px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.scroll-area::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ================= 书本卡片 ================= */
+.book-card {
+  position: relative;
+  display: flex; gap: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: linear-gradient(150deg, rgba(52,36,85,0.55) 0%, rgba(30,22,54,0.75) 100%);
+  box-shadow: 0 10px 30px rgba(6,3,15,0.5), inset 0 1px 0 rgba(201,182,255,0.07);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform .18s cubic-bezier(.22,1,.36,1), box-shadow .22s, border-color .22s;
+  animation: cardIn .38s cubic-bezier(.22,1,.36,1) backwards;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.book-card::after {
+  content: "";
+  position: absolute; left: 0; top: 14%; bottom: 14%;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--purple-soft), var(--purple-deep));
+  opacity: .75;
+}
+.book-card:active {
+  transform: scale(.976);
+  border-color: var(--line-2);
+  box-shadow: 0 6px 20px rgba(6,3,15,0.6), 0 0 0 1px var(--lav-glow);
+}
+
+.book-spine {
+  flex: 0 0 auto;
+  width: 46px; height: 60px;
+  border-radius: 8px 12px 12px 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 21px; font-weight: 700;
+  color: rgba(255,255,255,0.92);
+  background: linear-gradient(150deg, var(--purple-mid), var(--lav-5) 70%);
+  box-shadow: inset 0 0 0 1px rgba(201,182,255,0.25), 0 4px 14px rgba(0,0,0,.4);
+  text-shadow: 0 1px 6px rgba(0,0,0,.35);
+}
+
+.book-info { flex: 1 1 auto; min-width: 0; }
+.book-info h3 {
+  margin: 0 0 5px;
+  font-size: 16.5px; font-weight: 650;
+  color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.book-info p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.58;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.book-info p.placeholder { color: var(--text-3); font-style: italic; }
+
+.book-meta {
+  margin-top: 9px;
+  display: flex; gap: 12px; align-items: center;
+  font-size: 11px; color: var(--text-3); letter-spacing: .4px;
+}
+.book-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); opacity: .6; }
+
+/* ================= 空状态 ================= */
+.empty-hint {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; pointer-events: none;
+  color: var(--text-3);
+  animation: viewIn .5s ease;
+}
+.empty-hint[hidden] { display: none; }
+.empty-icon {
+  font-size: 46px; color: var(--lav-5);
+  margin-bottom: 8px;
+  text-shadow: 0 0 40px var(--lav-glow);
+}
+.empty-hint p { margin: 0; font-size: 15px; color: var(--text-2); letter-spacing: 1px; }
+.empty-hint span { font-size: 12.5px; }
+
+/* ================= 章节列表 / 文件管理器 ================= */
+.breadcrumb-bar {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 14px;
+  padding: 9px 13px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: rgba(30,22,54,0.55);
+  font-size: 12.5px;
+  color: var(--text-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+.breadcrumb-bar::-webkit-scrollbar { display: none; }
+.crumb { cursor: pointer; padding: 2px 7px; border-radius: 7px; flex: 0 0 auto; }
+.crumb:active { background: rgba(108,79,208,0.35); }
+.crumb.current { color: var(--lilac); font-weight: 600; }
+.crumb-sep { color: var(--text-3); opacity: .6; flex: 0 0 auto; }
+
+.fm-row {
+  position: relative;
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 14px;
+  margin-bottom: 9px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: linear-gradient(140deg, rgba(46,32,76,0.5), rgba(27,20,48,0.7));
+  cursor: pointer;
+  transition: transform .16s, background .2s, border-color .2s;
+  animation: cardIn .3s cubic-bezier(.22,1,.36,1) backwards;
+}
+.fm-row:active {
+  transform: scale(.982);
+  background: rgba(60,42,102,0.6);
+  border-color: var(--line-2);
+}
+.fm-row.dragging { opacity: .45; border-style: dashed; border-color: var(--purple-soft); }
+.fm-row.move-pending { box-shadow: 0 0 0 1px var(--purple-soft), 0 0 18px rgba(165,139,255,.3); }
+
+.fm-icon {
+  flex: 0 0 auto; width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 11px;
+  font-size: 18px;
+  background: rgba(108,79,208,0.22);
+  border: 1px solid rgba(165,139,255,0.2);
+  color: var(--lilac);
+}
+.fm-row.is-folder .fm-icon { background: rgba(165,139,255,0.16); }
+.fm-row.is-chapter .fm-icon { background: rgba(139,111,240,0.14); }
+/* 设定类节点：青玉色调，与章节/文件夹区分 */
+.fm-row.fm-setting .fm-icon {
+  background: rgba(110,214,196,0.14);
+  border-color: rgba(110,214,196,0.26);
+  color: #7fe3cd;
+}
+.fm-row.fm-setting .fm-tail { color: var(--ok); opacity: .9; }
+.fm-row.fm-setting::before {
+  content: "";
+  position: absolute; left: 0; top: 18%; bottom: 18%;
+  width: 2px; border-radius: 0 2px 2px 0;
+  background: linear-gradient(180deg, #7fe3cd, rgba(127,227,205,0.15));
+}
+.meta-setting { color: #7fe3cd !important; }
+
+.fm-main { flex: 1 1 auto; min-width: 0; }
+.fm-main .fm-name {
+  font-size: 15px; font-weight: 560; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-main .fm-sub {
+  margin-top: 2px;
+  font-size: 11.5px; color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-tail {
+  flex: 0 0 auto;
+  font-size: 11.5px; color: var(--purple-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .3px;
+  opacity: .85;
+}
+.fm-chevron { flex: 0 0 auto; color: var(--text-3); opacity: .6; }
+
+.fm-move-tag {
+  position: absolute; top: -7px; left: 40px;
+  font-size: 10px; letter-spacing: .5px;
+  padding: 1px 7px; border-radius: 6px;
+  background: linear-gradient(140deg, var(--purple-mid), var(--purple-deep));
+  color: #fff;
+}
+
+/* ================= 编辑器 ================= */
+.editor-area {
+  display: flex; flex-direction: column;
+  padding: 0;
+  position: relative;
+}
+
+.editor-title-wrap { padding-right: 4px; }
+
+.editor-kind-tag {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10px; letter-spacing: .8px;
+  color: var(--lilac);
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(108,79,208,0.28);
+  border: 1px solid rgba(165,139,255,0.22);
+}
+.editor-kind-tag[hidden] { display: none; }
+.editor-title-input {
+  width: 100%;
+  border: none; outline: none;
+  background: transparent;
+  font-size: 17px; font-weight: 650;
+  color: var(--text-1);
+  font-family: inherit;
+  padding: 3px 0;
+  border-bottom: 1px dashed transparent;
+  transition: border-color .2s;
+  user-select: text; -webkit-user-select: text;
+}
+.editor-title-input:focus { border-bottom-color: var(--line-2); }
+.editor-title-input::placeholder { color: var(--text-3); font-weight: 400; }
+
+.word-count-chip {
+  display: flex; align-items: baseline; gap: 2px;
+  padding: 6px 11px;
+  border-radius: 11px;
+  border: 1px solid var(--line-2);
+  background: rgba(52,36,85,0.5);
+  color: var(--lilac);
+  font-variant-numeric: tabular-nums;
+  transition: transform .18s;
+}
+.word-count-chip b { font-size: 14px; font-weight: 700; }
+.word-count-chip span { font-size: 10px; opacity: .75; }
+.word-count-chip.pulse { animation: chipPulse .3s ease; }
+@keyframes chipPulse { 50% { transform: scale(1.1); } }
+
+.editor-body {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  resize: none;
+  border: none; outline: none;
+  background: transparent;
+  padding: 20px 20px 30px;
+  color: var(--text-1);
+  font-family: Georgia, "Songti SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  font-size: 16.5px;
+  line-height: 2.0;
+  letter-spacing: .4px;
+  user-select: text; -webkit-user-select: text;
+  caret-color: var(--purple-soft);
+}
+.editor-body::placeholder { color: var(--text-3); font-style: italic; opacity: .7; }
+.editor-body::-webkit-scrollbar { width: 0; }
+
+.editor-status {
+  position: absolute; left: 20px; bottom: calc(var(--safe-b) + 10px);
+  font-size: 11px; color: var(--text-3);
+  letter-spacing: .6px;
+  opacity: 0; transition: opacity .3s;
+  pointer-events: none;
+}
+.editor-status.show { opacity: .8; }
+
+/* ================= 悬浮窗 ================= */
+.overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(8,4,18,0.68);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  animation: fadeIn .2s ease;
+}
+.overlay[hidden] { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  width: 100%; max-width: 400px;
+  padding: 22px 20px 18px;
+  border-radius: 22px;
+  border: 1px solid var(--line-2);
+  background:
+    radial-gradient(120% 80% at 80% -20%, rgba(165,139,255,0.16), transparent 60%),
+    linear-gradient(160deg, var(--lav-4) 0%, var(--lav-2) 100%);
+  box-shadow: 0 24px 60px rgba(4,2,10,0.75), inset 0 1px 0 rgba(201,182,255,0.1);
+  animation: modalIn .3s cubic-bezier(.22,1.2,.36,1);
+  max-height: 86vh; overflow-y: auto;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(18px) scale(.95); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-title {
+  margin: 0 0 4px;
+  font-size: 17px; font-weight: 680;
+  color: var(--mist);
+  letter-spacing: .5px;
+}
+.modal-desc {
+  margin: 0;
+  font-size: 13px; color: var(--text-2); line-height: 1.6;
+  word-break: break-word;
+}
+.modal-desc:not([hidden]) + .modal-fields:not(:empty) { margin-top: 14px; }
+.modal-fields { display: flex; flex-direction: column; gap: 13px; }
+.modal-fields:not(:empty) { margin-top: 16px; }
+
+.field label {
+  display: block;
+  font-size: 11.5px; letter-spacing: .8px;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.field input, .field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: rgba(11,7,20,0.55);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  user-select: text; -webkit-user-select: text;
+}
+.field textarea { resize: none; min-height: 88px; line-height: 1.65; }
+.field input:focus, .field textarea:focus {
+  border-color: var(--purple-soft);
+  box-shadow: 0 0 0 3px rgba(165,139,255,0.14);
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
+
+.modal-actions {
+  display: flex; gap: 10px;
+  margin-top: 20px;
+}
+.btn {
+  flex: 1 1 0;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: rgba(52,36,85,0.45);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 14.5px; font-weight: 560;
+  cursor: pointer;
+  transition: transform .15s, background .2s, color .2s, box-shadow .2s;
+}
+.btn:active { transform: scale(.965); }
+.btn.primary {
+  background: linear-gradient(145deg, var(--purple-mid), var(--purple-deep));
+  border-color: rgba(201,182,255,0.35);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(108,79,208,0.4);
+}
+.btn.danger {
+  background: linear-gradient(145deg, #d94a76, #a82e58);
+  border-color: rgba(255,168,192,0.3);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(217,74,118,0.32);
+}
+.btn.ghost { background: transparent; }
+
+/* 选择型悬浮窗（文件夹 / 章节） */
+.choice-list { display: flex; flex-direction: column; gap: 11px; margin-top: 16px; }
+.choice-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 15px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: linear-gradient(140deg, rgba(52,36,85,0.5), rgba(27,20,48,0.7));
+  cursor: pointer;
+  transition: transform .16s, background .2s, border-color .2s;
+  text-align: left;
+}
+.choice-item:active {
+  transform: scale(.975);
+  border-color: var(--line-2);
+  background: rgba(70,50,118,0.6);
+}
+.choice-item .ci-icon {
+  flex: 0 0 auto; width: 42px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px; font-size: 20px;
+  background: rgba(108,79,208,0.22);
+  border: 1px solid rgba(165,139,255,0.2);
+  color: var(--lilac);
+}
+.choice-item .ci-text { flex: 1 1 auto; min-width: 0; }
+.choice-item .ci-text b { display: block; font-size: 15px; font-weight: 620; color: var(--text-1); }
+.choice-item .ci-text span { display: block; font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+/* ================= 长按菜单 ================= */
+.sheet-overlay { align-items: flex-end; padding: 0; }
+.action-sheet {
+  width: 100%; max-width: 460px;
+  margin: 0 auto;
+  padding: 8px 12px calc(var(--safe-b) + 14px);
+  border-radius: 24px 24px 0 0;
+  border: 1px solid var(--line-2); border-bottom: none;
+  background:
+    radial-gradient(120% 70% at 50% -30%, rgba(165,139,255,0.14), transparent 65%),
+    linear-gradient(180deg, var(--lav-4) 0%, var(--lav-1) 100%);
+  box-shadow: 0 -16px 50px rgba(4,2,10,0.7);
+  animation: sheetIn .3s cubic-bezier(.22,1,.36,1);
+}
+@keyframes sheetIn { from { transform: translateY(100%); } to { transform: none; } }
+
+.sheet-head {
+  padding: 14px 12px 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+.sheet-head b {
+  display: block; font-size: 14.5px; color: var(--mist); font-weight: 620;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sheet-head span { display: block; font-size: 11.5px; color: var(--text-3); margin-top: 3px; letter-spacing: .6px; }
+
+.sheet-items { display: flex; flex-direction: column; gap: 6px; padding-bottom: 4px; }
+.sheet-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: none;
+  background: transparent;
+  color: var(--text-1);
+  font-family: inherit; font-size: 15px;
+  text-align: left; cursor: pointer;
+  transition: background .18s, transform .14s;
+}
+.sheet-item:active { background: rgba(108,79,208,0.32); transform: scale(.985); }
+.sheet-item .si-icon {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px; font-size: 15px;
+  background: rgba(108,79,208,0.2);
+  color: var(--lilac); flex: 0 0 auto;
+}
+.sheet-item.danger { color: var(--danger); }
+.sheet-item.danger .si-icon { background: rgba(255,107,147,0.14); color: var(--danger); }
+.sheet-item.paste { color: var(--ok); }
+.sheet-item.paste .si-icon { background: rgba(142,224,192,0.14); color: var(--ok); }
+.sheet-item .si-sub { margin-left: auto; font-size: 11px; color: var(--text-3); }
+
+.sheet-cancel {
+  margin-top: 8px;
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: rgba(52,36,85,0.35);
+  color: var(--text-2);
+  font-family: inherit; font-size: 14.5px;
+  cursor: pointer;
+}
+.sheet-cancel:active { background: rgba(108,79,208,0.28); }
+
+/* ================= Toast ================= */
+.toast {
+  position: fixed; z-index: 200;
+  left: 50%; bottom: calc(var(--safe-b) + 34px);
+  transform: translateX(-50%) translateY(14px);
+  padding: 11px 20px;
+  border-radius: 40px;
+  border: 1px solid var(--line-2);
+  background: linear-gradient(145deg, var(--lav-4), var(--lav-2));
+  color: var(--mist);
+  font-size: 13.5px;
+  letter-spacing: .4px;
+  box-shadow: 0 12px 34px rgba(4,2,10,0.65);
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  pointer-events: none;
+  max-width: 82vw;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.toast[hidden] { display: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ================= 滚动条（桌面预览） ================= */
+@media (min-width: 640px) {
+  .scroll-area { padding-left: 0; padding-right: 0; }
+  .scroll-area > * { max-width: 620px; margin-left: auto; margin-right: auto; }
+  .scroll-area > .fm-move-tag { max-width: none; }
+  .empty-hint { max-width: 620px; margin: 0 auto; }
+}
+
+/* ================= 时间线编辑器 ================= */
+.tl-head {
+  flex: 0 0 auto;
+  display: flex; align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px;
+  font-size: 11px; letter-spacing: 1.2px;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--line);
+  background: rgba(23,16,42,0.5);
+}
+/* 时间列窄，事件列宽 */
+.tl-col-time { flex: 0 0 84px; width: 84px; }
+.tl-col-text { flex: 1 1 auto; }
+
+.tl-area { padding-top: 12px; }
+
+/* 每行：左时间 + 右事件 */
+.tl-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  margin-bottom: 6px;
+  position: relative;
+  border-bottom: 1px dashed rgba(165,139,255,0.10);
+  animation: cardIn .3s cubic-bezier(.22,1,.36,1) backwards;
+}
+.tl-row:last-child { border-bottom: none; }
+
+/* 时间输入：小占比，单行，右对齐 */
+.tl-time {
+  flex: 0 0 84px; width: 84px;
+  padding: 9px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(11,7,20,0.5);
+  color: var(--lilac);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  user-select: text; -webkit-user-select: text;
+}
+.tl-time:focus {
+  border-color: var(--purple-soft);
+  box-shadow: 0 0 0 3px rgba(165,139,255,0.13);
+}
+.tl-time::placeholder { color: var(--text-3); font-weight: 400; font-size: 11.5px; }
+
+/* 事件输入：大占比，多行自适应 */
+.tl-text {
+  flex: 1 1 auto; min-width: 0;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(11,7,20,0.4);
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.62;
+  resize: none;
+  overflow: hidden;
+  min-height: 42px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  user-select: text; -webkit-user-select: text;
+}
+.tl-text:focus {
+  border-color: var(--purple-soft);
+  background: rgba(11,7,20,0.62);
+  box-shadow: 0 0 0 3px rgba(165,139,255,0.13);
+}
+.tl-text::placeholder { color: var(--text-3); }
+
+/* 事件行的时间轴节点装饰 */
+.tl-row::before {
+  content: "";
+  position: absolute;
+  left: -10px; top: 20px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--purple-soft);
+  box-shadow: 0 0 8px var(--lav-glow);
+  opacity: .55;
+}
+
+.tl-empty {
+  text-align: center; padding: 56px 20px;
+  color: var(--text-3); font-size: 13px;
+}
+.tl-empty .ti { font-size: 38px; opacity: .5; display: block; margin-bottom: 10px; }
+
+.tl-hint {
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-3);
+  padding: 18px 0 6px;
+  letter-spacing: .5px;
+}
+
+/* 时间线行的长按/删除按钮 */
+.tl-del {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.tl-del:active { background: rgba(255,107,147,0.16); color: var(--danger); }
+
+/* 大类图标配色：时间线 / 大纲 */
+.fm-row.fm-timeline .fm-icon,
+.fm-row.fm-outline .fm-icon {
+  background: rgba(165,139,255,0.16);
+  border-color: rgba(165,139,255,0.24);
+  color: var(--lilac);
+}
+.fm-row.fm-timeline .fm-tail,
+.fm-row.fm-outline .fm-tail { color: var(--purple-soft); }
+
+/* ================= 设定编辑器（分类列表） ================= */
+.set-area { padding-top: 14px; }
+
+/* 单个分类卡片：头部为分类名，下方为内容区 */
+.cat-card {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: linear-gradient(150deg, rgba(46,32,76,0.5), rgba(25,18,45,0.72));
+  box-shadow: 0 8px 24px rgba(6,3,15,0.42), inset 0 1px 0 rgba(201,182,255,0.06);
+  margin-bottom: 14px;
+  overflow: hidden;
+  animation: cardIn .32s cubic-bezier(.22,1,.36,1) backwards;
+}
+
+/* 头部：分类名 */
+.cat-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px 11px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(100deg, rgba(108,79,208,0.30), rgba(108,79,208,0.08));
+  position: relative;
+}
+.cat-head::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--purple-soft), var(--purple-deep));
+}
+.cat-name {
+  flex: 1 1 auto; min-width: 0;
+  border: none; outline: none;
+  background: transparent;
+  color: var(--mist);
+  font-family: inherit;
+  font-size: 15px; font-weight: 650;
+  letter-spacing: .4px;
+  padding: 2px 0;
+  border-bottom: 1px dashed transparent;
+  transition: border-color .2s;
+  user-select: text; -webkit-user-select: text;
+}
+.cat-name:focus { border-bottom-color: rgba(201,182,255,0.4); }
+.cat-name::placeholder { color: var(--text-3); font-weight: 400; }
+
+.cat-word {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--purple-soft);
+  font-variant-numeric: tabular-nums;
+  opacity: .8;
+  white-space: nowrap;
+}
+
+.cat-del {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .18s, color .18s;
+}
+.cat-del:active { background: rgba(255,107,147,0.16); color: var(--danger); }
+
+/* 内容区：正文文本，大占比 */
+.cat-body {
+  display: block;
+  width: 100%;
+  border: none; outline: none;
+  background: transparent;
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.72;
+  padding: 12px 14px 14px;
+  resize: none;
+  overflow: hidden;
+  min-height: 76px;
+  user-select: text; -webkit-user-select: text;
+  caret-color: var(--purple-soft);
+}
+.cat-body::placeholder { color: var(--text-3); }
+
+.set-empty {
+  text-align: center; padding: 56px 20px;
+  color: var(--text-3); font-size: 13px;
+}
+.set-empty .si { font-size: 38px; opacity: .5; display: block; margin-bottom: 10px; }
+
+.set-hint {
+  text-align: center;
+  font-size: 11.5px; color: var(--text-3);
+  padding: 4px 0 8px;
+  letter-spacing: .4px;
+}
+
+/* 顶栏右侧两个元素并排 */
+#view-setting .topbar-right { gap: 8px; }
+
+/* ================= 全局搜索 ================= */
+.search-topbar { gap: 8px; }
+
+.search-input {
+  width: 100%;
+  border: none; outline: none;
+  background: transparent;
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 16px;
+  padding: 4px 0;
+  user-select: text; -webkit-user-select: text;
+  caret-color: var(--purple-soft);
+}
+.search-input::placeholder { color: var(--text-3); }
+.search-input::-webkit-search-cancel-button { display: none; }
+
+/* 模式切换 */
+.search-modes {
+  flex: 0 0 auto;
+  display: flex; gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(23,16,42,0.42);
+}
+.mode-btn {
+  flex: 1 1 0;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: rgba(52,36,85,0.32);
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s, transform .14s;
+}
+.mode-btn:active { transform: scale(.97); }
+.mode-btn.active {
+  background: linear-gradient(145deg, var(--purple-mid), var(--purple-deep));
+  border-color: rgba(201,182,255,0.42);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(108,79,208,0.38);
+}
+.mode-btn .mb-icon { font-size: 13px; opacity: .9; }
+
+.search-status {
+  flex: 0 0 auto;
+  padding: 8px 16px 4px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  letter-spacing: .5px;
+  min-height: 0;
+}
+.search-status:empty { display: none; }
+
+.search-area { padding-top: 6px; }
+
+/* 结果项 */
+.sr-row {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: linear-gradient(140deg, rgba(46,32,76,0.5), rgba(27,20,48,0.7));
+  cursor: pointer;
+  transition: transform .16s, background .2s, border-color .2s;
+  animation: cardIn .28s cubic-bezier(.22,1,.36,1) backwards;
+}
+.sr-row:active {
+  transform: scale(.982);
+  background: rgba(60,42,102,0.6);
+  border-color: var(--line-2);
+}
+
+.sr-icon {
+  flex: 0 0 auto; width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  font-size: 16px;
+  background: rgba(108,79,208,0.2);
+  border: 1px solid rgba(165,139,255,0.2);
+  color: var(--lilac);
+}
+
+.sr-main { flex: 1 1 auto; min-width: 0; }
+.sr-name {
+  font-size: 14.5px; font-weight: 560; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-path {
+  margin-top: 2px;
+  font-size: 11px; color: var(--text-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sr-snippet {
+  margin-top: 7px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: rgba(11,7,20,0.42);
+  border-left: 2px solid rgba(165,139,255,0.32);
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sr-snippet .hit {
+  color: #ffe9a8;
+  background: rgba(255,214,102,0.18);
+  border-radius: 3px;
+  padding: 0 2px;
+  font-weight: 600;
+}
+.sr-name .hit {
+  color: #ffe9a8;
+  background: rgba(255,214,102,0.18);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.sr-tail {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--purple-soft);
+  opacity: .82;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.sr-badge {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 10px; letter-spacing: .5px;
+  padding: 1px 6px; border-radius: 5px;
+  background: rgba(142,224,192,0.16);
+  color: #7fe3cd;
+}
+.sr-badge.name-only {
+  background: rgba(165,139,255,0.16);
+  color: var(--lilac);
+}
+
+.search-empty {
+  text-align: center; padding: 56px 24px;
+  color: var(--text-3); font-size: 13px; line-height: 1.8;
+}
+.search-empty .se-icon { font-size: 40px; opacity: .45; display: block; margin-bottom: 12px; }
+.search-empty kbd {
+  display: inline-block;
+  padding: 1px 6px; border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: rgba(52,36,85,0.5);
+  color: var(--text-2);
+  font-size: 11px;
+  font-family: inherit;
+}
+
+/* ================= IndexedDB 容量条 ================= */
+.storage-bar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px 10px;
+  background: rgba(20,14,37,0.55);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 进度条轨道 */
+.sb-track {
+  flex: 1 1 auto;
+  position: relative;
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(11,7,20,0.72);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.45), 0 0 0 1px rgba(165,139,255,0.10);
+  overflow: hidden;
+}
+
+.sb-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--purple-mid), var(--lilac));
+  box-shadow: 0 0 10px rgba(165,139,255,0.45);
+  transition: width .5s cubic-bezier(.22,1,.36,1), background .3s;
+}
+/* 用量分级配色 */
+.sb-fill.warn {
+  background: linear-gradient(90deg, #e0a94a, #f5cd76);
+  box-shadow: 0 0 10px rgba(224,169,74,0.42);
+}
+.sb-fill.danger {
+  background: linear-gradient(90deg, #d94a76, #ff7ea3);
+  box-shadow: 0 0 12px rgba(217,74,118,0.5);
+}
+
+/* 数值 */
+.sb-text {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  min-width: 96px;
+  text-align: right;
+}
+.sb-text b { color: var(--lilac); font-weight: 650; }
+.sb-text.warn b { color: #f5cd76; }
+.sb-text.danger b { color: #ff9ab7; }
+
+/* 容量切换按钮（条的最右边） */
+.sb-cap-btn {
+  flex: 0 0 auto;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  border: 1px solid var(--line-2);
+  background: rgba(52,36,85,0.5);
+  color: var(--lilac);
+  cursor: pointer;
+  transition: transform .16s, background .2s;
+}
+.sb-cap-btn:active {
+  transform: scale(.88);
+  background: rgba(108,79,208,0.5);
+}
+
+/* 容量选项列表 */
+.cap-list {
+  display: flex; flex-direction: column; gap: 7px;
+  margin-top: 16px;
+}
+.cap-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: linear-gradient(140deg, rgba(52,36,85,0.42), rgba(27,20,48,0.62));
+  color: var(--text-1);
+  font-family: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform .15s, background .2s, border-color .2s;
+}
+.cap-item:active { transform: scale(.978); background: rgba(70,50,118,0.6); }
+.cap-item .cap-val { flex: 1 1 auto; font-weight: 600; letter-spacing: .4px; }
+.cap-item .cap-note { font-size: 11px; color: var(--text-3); }
+.cap-item.current {
+  border-color: rgba(201,182,255,0.5);
+  background: linear-gradient(140deg, rgba(108,79,208,0.45), rgba(60,42,102,0.5));
+  box-shadow: 0 0 0 1px rgba(165,139,255,0.22), 0 6px 18px rgba(108,79,208,0.25);
+}
+.cap-item .cap-check {
+  flex: 0 0 auto;
+  color: var(--lilac);
+  font-size: 15px;
+}
+.cap-item .cap-check[hidden] { display: none; }
+
+/* ================= PWA 环境徽标 ================= */
+.pwa-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  letter-spacing: .4px;
+  color: var(--lilac);
+  background: rgba(108,79,208,0.26);
+  border: 1px solid rgba(165,139,255,0.22);
+  vertical-align: middle;
+}
+.pwa-badge[hidden] { display: none; }
+.pwa-badge.fennec {
+  color: #7fe3cd;
+  background: rgba(110,214,196,0.16);
+  border-color: rgba(110,214,196,0.28);
+}
+</style>
+</head>
+<body>
+<div id="app" class="app-shell">
+
+  <!-- ========== 视图 1：主页 / 书本列表 ========== -->
+  <section class="view active" id="view-books">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-mark">✿</span>
+      </div>
+      <div class="topbar-title">
+        <h1>我的书阁</h1>
+        <p>薰衣草夜 · 静心写作 <span class="pwa-badge" id="pwa-badge" hidden></span></p>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="btn-import-json" title="导入书本 JSON">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 19V5M6 11l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+        <button class="icon-btn accent" id="btn-new-book" title="创建小说书本">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+    <!-- IndexedDB 容量条 -->
+    <div class="storage-bar" id="storage-bar">
+      <div class="sb-track" id="sb-track">
+        <div class="sb-fill" id="sb-fill"></div>
+      </div>
+      <div class="sb-text" id="sb-text">0 KB / 128 MB</div>
+      <button class="sb-cap-btn" id="sb-cap-btn" title="切换容量上限">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </button>
+    </div>
+    <main class="scroll-area" id="books-list"></main>
+    <div class="empty-hint" id="books-empty" hidden>
+      <div class="empty-icon">✿</div>
+      <p>还没有书本</p>
+      <span>点击右上角 ＋ 开始你的第一部小说</span>
+    </div>
+  </section>
+
+  <!-- ========== 视图 2：章节管理 / 文件管理器 ========== -->
+  <section class="view" id="view-chapters">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-books" title="返回书阁">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title">
+        <h1 id="chapter-book-title">书名</h1>
+        <p id="chapter-breadcrumb">根目录</p>
+      </div>
+      <div class="topbar-right" id="chapter-actions"></div>
+    </header>
+    <main class="scroll-area" id="chapter-list"></main>
+  </section>
+
+  <!-- ========== 视图 3：写作编辑器 ========== -->
+  <section class="view" id="view-editor">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-chapters" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="editor-title" class="editor-title-input" type="text" placeholder="章节标题" autocomplete="off">
+        <span class="editor-kind-tag" id="editor-kind-tag" hidden></span>
+      </div>
+      <div class="topbar-right">
+        <div class="word-count-chip" id="editor-count"><b>0</b><span>字</span></div>
+      </div>
+    </header>
+    <main class="scroll-area editor-area">
+      <textarea id="editor-body" class="editor-body" placeholder="在这里写下你的故事……&#10;&#10;夜色如薰衣草般铺开。" spellcheck="false"></textarea>
+      <div class="editor-status" id="editor-status">已保存</div>
+    </main>
+  </section>
+
+  <!-- ========== 视图 4：时间线编辑器 ========== -->
+  <section class="view" id="view-timeline">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-timeline" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="timeline-title" class="editor-title-input" type="text" placeholder="时间线名称" autocomplete="off">
+        <span class="editor-kind-tag">🕰 时间线</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn accent" id="btn-new-event" title="创建新事件">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="tl-head">
+      <span class="tl-col-time">时间</span>
+      <span class="tl-col-text">事件</span>
+    </div>
+    <main class="scroll-area tl-area" id="timeline-list"></main>
+  </section>
+
+  <!-- ========== 视图 5：设定编辑器（分类列表） ========== -->
+  <section class="view" id="view-setting">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-setting" title="返回章节">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title editor-title-wrap">
+        <input id="setting-title" class="editor-title-input" type="text" placeholder="设定名称" autocomplete="off">
+        <span class="editor-kind-tag" id="setting-kind-tag">👤 人物设定</span>
+      </div>
+      <div class="topbar-right">
+        <div class="word-count-chip" id="setting-count"><b>0</b><span>字</span></div>
+        <button class="icon-btn accent" id="btn-new-category" title="创建分类">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+    <main class="scroll-area set-area" id="category-list"></main>
+  </section>
+
+  <!-- ========== 视图 6：全局搜索 ========== -->
+  <section class="view" id="view-search">
+    <header class="topbar search-topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="btn-back-search" title="返回">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </button>
+      </div>
+      <div class="topbar-title">
+        <input id="search-input" class="search-input" type="search" placeholder="搜索文件夹与文件…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="btn-clear-search" title="清空" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="search-modes">
+      <button class="mode-btn active" id="mode-name" data-mode="name">
+        <span class="mb-icon">🏷</span><span>文件名搜索</span>
+      </button>
+      <button class="mode-btn" id="mode-full" data-mode="full">
+        <span class="mb-icon">📖</span><span>全文搜索</span>
+      </button>
+    </div>
+
+    <div class="search-status" id="search-status"></div>
+    <main class="scroll-area search-area" id="search-results"></main>
+  </section>
+
+</div>
+
+<!-- ========== 通用悬浮窗 ========== -->
+<div class="overlay" id="modal-overlay" hidden>
+  <div class="modal" id="modal-box">
+    <h3 class="modal-title" id="modal-title">标题</h3>
+    <p class="modal-desc" id="modal-desc" hidden></p>
+
+    <div class="modal-fields" id="modal-fields"></div>
+
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ========== 长按菜单 ========== -->
+<div class="overlay sheet-overlay" id="sheet-overlay" hidden>
+  <div class="action-sheet" id="action-sheet">
+    <div class="sheet-head" id="sheet-head"></div>
+    <div class="sheet-items" id="sheet-items"></div>
+  </div>
+</div>
+
+<!-- ========== 轻提示 ========== -->
+<div class="toast" id="toast" hidden></div>
+
+<script>
+window.__PWA_ICONS__ = {"icon192":"data:image/png;base64,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","icon512":"data:image/png;base64,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","maskable512":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAneUlEQVR42u3de5Cd530f9u/7nnP2ggUB4kZCvN9NUaJESrRIyfKFSeM4E7lx6nZst3Ha2mqjTtKpGyd2pv3D40ztiR1lEruJMm46aTtq08aJppHlTGNFlizrLupCSSR14x28ACBxBxZ7Oed9+sd7dgFQIrHnEAvg7H4+MwuA4O7Z3XdxzvN9f8/z/J7q9/7cH5UAAJtK7RIAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAAAoBLAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAAAAAgAAIAAAAAIAACAAAAACAAAgAACAAAAACAAAgAAAAAgAAIAAAAAIAADAZa/rEvC6VS4BrLviEiAAcDmM+VX7SyklZVBSvDjB+uXrukrdaf+rNJ5sCABcqhekuspgqclgaZDudJ3eXCedXq0SAOtx498k/YVBlk4NUpqS3mwnVRWhGwGAi3/nvzzfzxXXzObmB3dl71u2ZcvuqXSm67YqAFzYADBIlub7Ofbs6ez77JHs+/yRDJZLOlNVSuP6IABwkQb//kKTW/+Dq3Lvf3l95q6eSumXNINifhLW0ZbdU9l5y1xu+tFdef5Lx/LQB57Oif0L6U7VKgEIAKzz4F8ny/OD3Pbnr8o7f+mWlKZk6Xi/LftXleo/rGcVICVZbEf66++/Mlt23p6P/9q3c/rwcjq9SghAAGAd7/wXS668aUve9gs3pBmUNMtNqo5hHy7Kc3DliZhk4Vg/u+7Ymnv+6vX57D94Iul5HjIefQBYUwJolpvc9uN7smVXL81Sk6r2ogOX5EW7W2XpZD83vHtHdt0xl/6i5yMCAOukDEqmruhm71u3ZbBcEi82cGmfk03J1Fw3V79lW5pl9X8EANbl7j9pBiUz23uZ3TWVpl/M98NlYvt1s7bfIgCwbuN/SlPSnanTmarbzcdecOCy0JvrKP8jALDOQaBq3xQb4TJRctZCXM9MBAAAQAAAAL4ffQBYV6Ws/GKe8iJd8fHmhIve8pdae8CW64AAwEb5BzZdp6pjivKijSLJYKmMdmJcSepelbprkcel/Lk1y8O22iAAsBHuaB76p8/k+HOn05l2cMnFuN6D5ZJ7/4vrs/O2ufQXB6nOc0JTaUp6c508+bGX8/gfvZTelo7jZi/2z62usnx6kDf+pb25/l07snz6/D83EAC47O3/+vG89M0T6W2pBYCLEAD6i03u+uk3tNMAa5l5KW1nuWP7FvLMpw9nens3xV3oRQ8AS8f7uf6BHWeqMMZ/BAAmXW9LJ1Nbu+nNCgDrP5IknV5pB5FRavmlLf9Pbe1mak4AuBQBIE07DWMKBgGADaM05aw312O9A0AZayVfecXPySh0KZ4nBn8EANwNnV3+bMoFWZ3+PY9b8roGulc+3vd9Aa9ywbq0jXJXPvrnHK7PMACBAACX6g52eb6fpj9sN1ySzvRKC+LXM3omiyeXkyarj1v3qvRmu+OFgO/zdfZmO6nOXkU/XNXdX+ivvs/ruS692TW2fK1WT40d8RoZ/UEAgEs0+Df9kuvfsTtbr5pJMyipO1Ve/u6JHHrieDq9eqwxqpSk06vyAz9ybbpT7TqEqpMc3TefF79+JL3ZEVe9D7/O6+7bnSv2zrSPVyX7vnQo84cXh/Pv7eC//drZ7L17R3t3/XoKASV55vMvZenk8muHgLKyl3zUueSVsr8QAAIAXOzxv6oyWBzkbT93S659+67Vv//yB5/I/keOpDvdGX1xWtWWzruz3Tz4K3enO32m8eXSfD8f+mufy5FnT45UCWi/zn7u+Zmbc8P9u1f//iO//FBOvHg6nV43qZL+Qj9737wjD/7K3Rfk+vz+L3wmC0eX0p2uzzPPX51VAajWfKEUAGDz0QqYy6oKsHy6n9KU9BcH7e9LzevfElWSpZPLKU3baKXpN5na0s2Df+fu1J26Hfyr8b7OwXLTLpwbvOIxhlMApWk/3+oCu2HHvVHemkGz9sV9Y3WTKwIACABwiTNAXZ37Vl34x627dZpByd43XZn733t7Fk8spx5x4dwrv87vO+hWecX7VCmD711xf/63rLk6X1VJVY88A9CujwA2FVMAbM7kW1cpTck9P3dLnv/q4Tz92YOZ3tZblz3wpWkH5aPPnspHf/3hkW/QS5ITBxdS9+o1VgJGT01FCQAEANgcpYasLpr7sb/1pvzr//p4Fk4up9Ndv/nw/lKTw0+cGGtKo9Or11QNWakAjNpNzvgPm/BGyCVgs1k5cKUaluS3Xj2bH/nlN2WwOEjWsQd7VSXd6c5Yb2sazEv7ScbqI6/5DwgAsKFv/Kvk2L5T+fa/e351wVwzKLnlR67OW/6Tm7JwbCl1Z/1CQCllrLeRKhsjLmg8UwHQgB4EANjAOtOdfOaffCsvf/d4u0AvbSe/d/61H8jVd12Zpfl+qs7kDYYrVf9xCgCmAEAAgI0fALpVlhcG+cTf+0b6i4PV9QDdmU4e/Dt3pzNVp/TLZN0QV2f9Xo/WCKisJAAFABAAYCNrmpLpuW5efORovvDPvrPaXa8MSvbcvi3vet+dWTxf171xx+lXbnNcw9tIjz92K2D/LmCzsQuAzRkCBiUz23t5+F8+nWvu2Zmb3311uzhwUHL3T9+Y5796KI9/4sXMbJtaXTT4epXSNhAa9U67M9VZ26C+ughwxBH9dR6MBAgAMHE6U3U++f5Hs+eO7dl61UzbB6AkP/LfvykHv3Us84cXxz6H4HuebNN1rrpz+4gBoMqx50+lv9isIQSU1UUAo3651gCAAACbRmlKutN1Tr60kD95/yP5i791X7sroCnZsms6P/a335w//NtfSmeqel0jZDWcaNtxw1z+499718gVgA+973M58NjR9Lac/8yCcRcBriYGQQA2DWsA2NSaQcn0tl6e+tSBPPz/PHlmV8Cg5Ib79+Te//SWdmtg98KsBygZ9SyA0Q9AGuf4YZ0AQQCATVkJmL6ily/8s+/kwKNHV7cAlqbkHb94e665Z2cWT/YvSH+AlUV6a38b7TyEapxGQMOTgG0CgM3FFACUdnV+aZKP/9Y38tP/9J3pbekkTduC98FfvTsfet/nMug36XRHz8wrO+yOPT+fT/+jx0Zu1HPshfl2a+Kajyw+UwwY5WsEBADYlFWA3mwnL3/3eD79j7+ZP/Ord6dJe8zvzpu25t1/44352G9+LVt2TI8VMJJk6VQ/T3/24Mi32t2Zztq2A650AqpH//JGPhIZEABgo2i3Bk7lsQ/vy3X37sodP35Ne3zvoOSN77kuz3/lUL710efHqgIkbZVhamtv5IF2lC16VZVUGa0R0MoUALC5WAMA5wyGJb0tnXzqdx7LsX2nzqwHKMm7f+mN2XHj1iyfHox9ZlBpyshvo6WMjHUnbwoABADY7ON/6l6dheNL+fhvP5JmpSVwUzKzbSoP/sqbU1IuywGzrCSAavSPtAsABAAQAgYl01t72ffQy3nof3+8XSA4/Ptr3roz9/3V27J4cvny/OJHbgU8nC5o/NxBAADSDEpmt0/lyx98PM996eUzWwBL8o5fuD3XvGVnO3xWl9fKuWr4axntAywCBAEAOOduuq7yid9+JKePLiXDSkBvtpPt120ZBoBJrwCcaU4ECABw+YxndZW6M/rbhbibLU1Jd6aTY8/N50//4aPtwNoM5//HGTCrjPW9rLkB0co2wFE7ARYBADYj2wC5rC2f7mf+8GJSkkF/7aPU1Fw3de/1p4AyPDXwOx99Idfeuytv/qkb0gzK6u6AkR6rX9pKwhhf1tRcd029AKqMGX6cBggCAFwWd/7DQezae3fl/vfekd5sd6QtcU98cn9OHVq8IJWApmkXBX72A9/KG+6+Mrtu3ZbSlLU15xne+SfJ3J7pvOuv3zlGCkke/YNnM39k6fzVgDGmAFYqAJYAgAAAl87KYFRVKSW58YE9ufGBPSM/zMvfOZ4TL55OZ7rTPuxZZe6Ry90lqTpVluf7+fjf+0b+8j9+oD0iuCk537B59ufcsnM6b//5W8e6LE98cn9OvbyYqlt/3y171TnBae1D+bDLgUWAsAlZA8Dl9Q+y2x5+U3Wq17XArhmcO6B1evXqATud3hj9/JuSqa3d7H/kaD7/e99uTw2sq1T1mYN7vmdwrdvvoX6d38vK51/ziG4RIKACwESpkvkjS5k/tNjOs9fV2I/T9JszW9xKcvLg6fQXp5IqOXVwYaxFfE2/bRX89X/9TK6688pc9/ZdafolVbdKf6k5Z+CtquH6hdf7vQwH/1cGmlf91qtqvCmANVQzAAEALrjSlPRmOvnMP/lW6m57Mt/rGY/6C4N0p9ry//J8P3/wN7945ja9KekvDdpBecQgUEpJZ7qTT/z9RzI9123vnKv28/VmOqt36r3ZbvY99HJ+/xc/s/o+41+c9vE7vfq1O/ad83nKyJ8DEADgklk+3X/FQDbegFnVZ62GL+1JfGcPkmPfkZekqtvfF08sr265O+fzrVYhShaXli/IjfVav95q7G2AEgAIAHAJjbO9bi13tN/zuOX1P3bVrV778apXvM8F/H5e9V2qarTuhNXKccAxAwACAFxCZYIet1zC7+dVPln1iirEmr8PBQDYdOwCgI1krOOAzz4NUBIAAQCYLMP+CaMuAWh3AZgBAAEAmNwCwJh9ADQCAAEAmOhndDXWEYVmAEAAACa8AlCNOpCvLAI0BwACADCByvAZPdZhQG79QQAAJvDWf6UCMH6DI0AAACa0ADDyIsDq3JMSAQEAmMRCQD3OyYNFBQAEAGBCh/6zfht9H6A1ACAAAJNq5aCi0Y4CaMv/dgGAAABMcB1g2Alw9GOOXTsQAIAJTgAZ7RCgMcICIAAAl5Uy1jbA0i4CSGUOAAQAYEILAGNsA4xtgCAAABNdAEhVJ1WqEar61ZlFgIAAAEzk+H/WYQCjfWBJ7AIAAQCYVNU4z2itAEEAADZCChi5AGAKAAQAYLIrAGOs5T+rACAHgAAATJqzu/mtdSSvYhEgCADAxFcARt0GmCSltGcBWAQIAgAwyQlg7SWAcdoGAwIAcFmO/6PdypeSlMa1AwEAmOAEkJE7Aa4sADQDAAIAMLEVgHF2AZSUxjwACADAZFcA1jrunxn/lQBAAAAmVnk9uwBcPhAAgMktAIxxF9/2AZAAQAAANk8CcBwwCADAZCsZ/TCgKmd3ArQIAAQAYEILAKMO4sN9gMX4DwIAMMEJYPQPaU8DNgcAAgAwueN/XY3cCCjDKQBtgUEAACY1AIxVAbANEAQAYMIrAGPMAhj8QQAAJnXkH78EUJq0CwEsAgQBAJjcCsDIAUAfABAAgAkPAGO3AgQEAGBzPKPP3vsvA4CXC2BzVQBKYxcACADAZAeAMVoBt3f/EgAIAMAEB4BhBWCE8fzMWQCAAABMZgAYtxWwSwcCALABKgBrG/rPKgFEHwAQAIBN84yuTAGAlwtg8isAY80BuG4gAACTHQDG6gQoAYAAAGzOCoAMAAIAsNkqAMZ/EACATVYBOLMK0CYAEACATfSMtgsAvFwAE18BGKMA0LhuIAAAkx0AascBAwIAbMIEMPq7G/9BAAAmffwf5zhg2wBAAAA2VwUgSdIY/0EAACbTynk+Yy0CdBgQCADAZBcAxl0DqAQAAgAwyc/oauS7+TPbAJUAQAAANk0FwDYAEACASR78x0wATRECQAAANl8FoCmWAIAAAExyCWDkPgBaAYMAAGyMZ/Sod/MaAYEAAEx6EWCMVsBRAQABAJj0BDD6h1j/BwIAMOGDf1VVay/nD99vtRMgIAAAk3nzX43zjLYGAAQAYANUAEbUGP9BAAAmPQGM8WGmAEAAACZVO4iPPAVQWQQIAgAw+QWAMc4DXm0E5CwgEACAySsAVCuDeBn9Yy0CAAEAmOQKQD36bXwpEgAIAMBkZ4CxjgN23UAAACa+AjDyDIBdACAAAJOpJKlWtgGOOJ7bBQACADDpFQBTAIAAAJswA9SjlwCKEgAIAMBkVwCcBggIALCZlJXDgMZIABYBggAATHYFoLIIEBAAYLMmgOGf1zb8WwQIAgAw8eP/qM/oYhEgCADApI//qaoxbuiN/yAAABsgAaz8ea3jf+PSgQAATHYGGGUR4DAktFMAzgIGAQCY4ArA6B9m/AcBAJhUK30AKn0AAAEANmcVYLTcYA0ACADAZA/+1eiHAdkGCAIAsBEywOhTAKvjvxwAAgAwWUqGOwDGaAUcUwAgAACTfPuf8XYBNMUmABAAgInOAGNtA1T7BwEAmMw7/5U/VFXKiHMAdgGAAABM+N3/WLsAmmgEBAIAMJFKGX8QNwUAAgAwySWAjLULwBQACADAJI//1bh9AFQAQAAAJrsEMOJpwFoBgwAAbIgKwKi3/yoAIAAAE18AGH0hYNEJEDaprksAG0A5aw3AqIsAVQDa/FRVK60Uhtdl5e/P+m8VEwQA4DIcwUasAFRnBrZqs16yKlWdNIOS/uIgg+UmpWkH+KoeXp+z/rvTq9OZqlN3qpRGGEAAAC59AWDsNQCbcQpg5W6/vzBIf3GQqbludty0NbtuuSLbr9uSLTumMrW1lyRZOrmc00eXcnTffA49eSLHnjuV0yeW053upDvTURVAAAAu9ajW/jLqULTZBq+6U2X5dHu3v/u2K3Lbn3lDbnznVdl589Z0eq+9LGqw3OTwUyfzzOcO5vGP78/Ljx9Pp1enN9tJMxACEACAS1ACqEadAhguF9gs439VVylNyemjS9lzx7bc83O35LYf29vexQ81/ebMtsjqzLVtPz7p9OrsuWNb+/E/e3Oe+JP9+er//VRe+s6xTG/trX4OEACAi1oBGGsKYBMkgKpTZbAwSKoq7/jF2/O2/+zW9GY7q4N+ktTdOnX3/BujVt6/O93JD/z5a3PLj+7NV/+vJ/OVf/FkynKT7kwnRTUAAQC4CON++/u4rYDLxl4DWHeqLM33M7dnJn/2f3hLrnvbruFAXlJVWR30l+f7efnxE3n58eM5eXAhS6f6SZKpuW62XjWT3bdty+7brkhvS/uyWQYlpSS9mU7e8Yu359q37cwf/8bXc+LgQqbnuqYEEACAixQE6ipjdALe0J0A606VpVP9XHnDXP7ib92X7dduSTMoqZLU3fZiHXryRB77yL488/mXcuLF0+kvDoaBamWXRFm9479i72xufOee3PWe67Pr1ivavDVoD2C+9t5d+anfvT//9le/nMPPnBQCEACAi1kKGDEBlNErBpMUiJZPD7Ltmi35yff/YK7YO9sO/lX7/04fXcpD//y7+da/ez6LJ5bTm+2kO12vTg2Usy9r2u2AJw+ezsP/8ql8898+lzt/4tr84C/cntkrp5KmpBmUbLtmS97z/vvy4f/uizmx/3Q7HWBNAJdrQHYJYANY2cs/TifAbMA5gKq9M+9M1/mJv3vv9wz+Lzx8OB963+fytX/1dJJk9sqpdHp1Sml7AjSD0t7ZD//cDMv9nV6d2e1TSZKv/aun86H3fS7PP3x4tfrSDEquuHo2P/E/3ZvuTCdNv2zaHgsIAMDFGvOqlSmAtd1xriwXaKcANtYoVdVVFk8t54f++huz+45t5wz+j39ifz7yyw/lxP7Tmd3RDuYrA/x549IwICTJ7I6pnNh/Oh/5mw/l8Y+/eE4I2H3btvzQ37gzy6f7Y53QCAIAsMb7+DLeIsANOAVQ1VWWTvZz4wNX5U3/4fUpTTvnX9VVnv3CS/n3v/5wUuXMHfqYmn5Jd6aTqk4++usP59nPv9SGgLTTBXe95/rc+M49WTrZX+0qCAIAsA4jX8a629xojYBKKam7Ve5/7+3tfzftNsDjL87nY7/x9VR1lbpbX5C5+dKUdvtgp87HfuPrOf7CfKphm+Akuf+9d6QzVekUiAAArFsJ4NzBv1r7x22ksakarvq/6V1X5eq7rmzv/oevcp/+3W9m/tBiutP1BV2YV5qS7nSd+cOL+fTvfnNYhWj//qo7t+emH7o6S6dUARAAgPUa/IaNgNY8tFUbcAPAMAjd9Z7r25OOByVVXeXpzx7MU586kJltvbVvzRthUWUzKJm5opcnP30gT3/2YKq6aj9PSe56z3XWASAAAOv8bB7rMKCNsVK9qpL+4iA7rp/LtffuTKq2D0Apydd+/+mkqtZU7WgX81Vp+mXYLKha0917eyBT1X6uMuwzUCXX3LMzO26cS39xEDkAAQC48APgmL2AyzlD2AR//3WVweIge9+yY3WBX1VXOfTEiex/5Eh6s+ffk1/VbdfA5YV+Zrf3Mru9l+WFfpbnz1/CL03J1Gwn+79xJC8/fnw1RHSnO3nD3TsyWByYBuCyohEQbASljfMj7AJsP6xsnE6AZRiD9r7pytUBOamy76GXs3Sqn9krp16z/F/V7fqB696+K2/7K7dm1y1bkySHnzqZr/yfT2Tflw5laq77miGi6lRZOrGcZx96Obtv37b6NVz95h159MPPxlJABADgQt76f/8/r33U3BhdAJqk7lW58vq54YDe/vWBbx5pT+krOe/gf9O79uQv/ObbU3fOXJEtO6dzzT078//9j1/J0585+JohoJT2sQ48dvScr2HH9XOpe52k8c+Vy4cpANggd79VXY03km+EbQDVsAS/pZstu6bbF7dOnVJKTh5YeO1T/obNe6a3dvPDv3RX6k5bul/pkdD0S+pOlR/+pbsyvXXY37969R9E3a1y8sBCu0Ww037eLbumh8Gh0RkQAQC48IWAkQsAK1MAY5wieNmFoFLSme6kN9tdvSD9hSanjyy1d/SvEnSqqkp/YZA9d27PtjdsWe0jsHJB6267j3/b3tlc9cYr018YvOqq/pJ20D99dDH9hcHqD6Q30xluP/TvFAEAWJcEUI32/huoD0Apw62QZ72qrfTyz3nyTWlKZrb1Xr0z4vDvZ7b1zt9DoGpD1dnrDVZ2FlgDgAAAXOCRP+OX/zdIAqiqcwf8JOlM1e2JfKW8+uUZlu2Pv3D6vJf52AvzbXWgvEamako6U3U6U2deXptBs3oeAQgAwAW8/c2ZswBGKwBsjPG/nDn+d/HE8updfWeqztzOqZRBedXqSCklvZluXvrOsTzzhbaff9NvzpwGONxO+OwXXspL3z6W3kz31Vv7VlXKoGRu13S602e2HS6e7LcHA9VVlAEQAIALfgs86jbA1ZL3RmgEVFdZXhjk1MGF4V13eyG2XzeXQf/8i+/qTp0/+fuP5MCjR1N361SdKlWnSt1tV/V/4rcfWV3U91qpqhk02X7tlnO+hlMHF7J8Wh8ALi+2AcLGGf9HOgMg1coiwI0zBdD0mxx68kRueGDPahB6w1t35pEPP/ua6xxLKelMVZk/vJg/+OWHctuDe1f7Cex/7Gge//j+9BcH5z1HoBpWVN7wlp1nrnOSQ0+eSDNoRmvVDAIAsOYAMLKysRYBdqq8+I0juTfDVrxJrr9vV+Z2z7Td/DqvPgKXJulOdVIGJY/+wb488uFnh9e1Sm9Lt/1/5wlLg+WSLbumc/07drdVheHX8OI3zt+LAC42UwCwkRJANeL7DxcBVBtgDqCUkt50JwcePZr5Q4urB/LM7Z7Jze++Kkvz/dTna+dbSlIn09t6md0+ldntU5ne1mtP9zvP6F13qizNL+fmH7o6W/fMrB5ENH94sW1FPN1xLDACALAeAWCM7fwb6Tjg0q76P/nSQp781IHhXX37zd3zM7dkemvvtZv4nH1NhrsJmuFCwPNe1JVmQnO93POzN5/zuZ/69IGcPLjQ7gow/iMAABd69Gv3v492J1820CLAlTv4zlQnj/3hvjT9JnW3nbPfceNc7v3Zm7NwbOn8C/nGeSHt1Fk4tpS3/szN2XnT1rYLYLdOMyh57A+fS2eqo/yPAACsz91vldFbAZdSNlRZujRJb7aTg988lu9+7MV2lmO40PFtP39rbrh/TxaOLb52a+BRX0S7dRaOLeb6d+zJff/5rSlNWW1K9Pgfv5gDjx5d00mEIAAAF/XZvDL+b5jhqSTd6Tpf/N++m8Xjy21lpCSdXp0f/7V7svOWbW0l4AKEgHbwX8rOm6/Ij//aPen06mFPgmTx5HK++M+/m67SPwIAsI5j3qv2p39VKwsGNlh/+lJKutOdHN03n89+4FurLXhL067Q/8n335er79qe04fbhYLj7M1f+bj5wwu5+q7t+cl/8IOZ2z3d3v0Pfxaf+8C3c+TZU6udCEEAANbHGKcBtZ2Ay4Y7oa4ZtL39H/3Ivjzyb55N3alSmjYEXHH1bH7qd+7Pm//yDVk61c/SfNuhr+5Ur7mVsqralf5VXWVpvp+lU/28+aduzF/6nftzxdWz7eDftO/z2HAb4cy23jmtieFyog8AbJTxvx5xF+BqAtigVZFSMjXXzad+57HMXjmVW39sbzsYNyW9Ld08+Kt355Yf3Zsvf/CJ7P/GkTT9Jp2pTjq9tgvgOY81KOkvNRksDVJ367zh7h15+8/fmhsf2NP+/+G8f92t8uSfHsgn/+Gj7fG/7vwRAIB1DwArt6+jrOrfSNsAv8/31t611/n3f/drWT49yJ1/4drVCkFVJTc+sCc3PrAnz33p5Tz+if3Z/8iRnDy4kKVT/dXrUlXJ1Fw3266Zy94378itD+7N9fftPnfg77SdFL79R8/nE7/1SNtKuIqV/wgAwMUIABlrCiAp2agd6tvBOWmqKn/8m1/P4adP5oH33p66124PXNkqeN19u3PdfbvT9Juc2H86J19azPLpfpKkN9vN1j3TuWLv7DkLB5t+szp10PSbfPF//W6+/C+eTHe6k7o2+CMAABfpbjdjHjSz0QeqMlyVPzXXzZc/+Hhe+NrhPPBf3ZHr3r5rdQHgYLnt019362y/bi7br5v7vo/V9JuUknS69WoYeP4rh/L5/+U7eeHrhzOzrbeRTlhGAAAmpgKwurR/DWGgGi4A3ECNgF4rIJVSMrt9KgcfO5qP/K2HcssPX527/6Mb84a37my3750VGMpgpUNSe6Gq4QLBsysALzx8ON/4f5/JU396IM2gfWwL/hAAgIsfAMapAGyyu9Vm0C4ATCn57sdfzJOfOpCr7tyem951Va65Z2d23DCXmW1TqbqvmE8pycKx5RzddzLPf/VwnvncSznwzaMZLDWZ3tpNp6oM/ggAwCWsAIyaAYaHAW0mKx35prf2klJy4NGjeeHhw+nOdDK7Yypbr5rN7PaptipQJYOlQRaOLefEwYWcPrKY/sIgnV6d3mwn3elhhz81fwQA4FJWAEZY/H/m9006dq0Egd6Wbqaq9r8Xji1n/tBiyqCcswug6lSpu3W6U3V6M53V9sIGfgQA4DJIAOOMgrrUrnTvS9p9/J3e939ZbM9NWFkfAAIAcNlUAMYY/FYbAVUu4EogclfPJqEVMGyQgauqq9FbAZ692B0QAIAJrACMswlAAQA2LVMArPugNO6Ja6zxGtdVUlff07/+/AWAtlft6s9onF0EXJCf38jVGxAAuNz1F5sszw+S0p6UxvoMIMvzgzT90Wv5TZMszw8yWC5jVRC4tD8/EAC4bO26fS6dqTrd6cqOqfUcQE4Nsv262dWtbWtRSkm3V+fqN1/RNrERAC7pz2/LrqmRfn4gAHDZKiV54L+92cBysa53k/QXmjVNt1RV0vRLZnf38md/404X77L4+ZUsn25MlyEAsDEoa17MW8lxRp2kWfYzmtifHwgAeFHDzwgYhW2AACAAAAACAKzQMQ4uL9XZ5xKYx0EAYD1eZ6oq/cVmuFe8EgTgMrE8P3B2AQIA63TjX9oT0haOLef0kaXUXeM/XC6OP7+QaLCFAMC6VQA6VZZO9HPwkROpu3WiWQlc2udk1XYPPPD146m7K6c6gQDAOoWAxz/6UhZP9FN3a2194RJp+iVTW7t57vNH8vK3T6Yz4/nIePQB4LxKU9KdqXPoOyfztQ8+l3f8Nzelv9ikWW7aQ2hcIljf52DSnqdRkult3Rx9ej5f/T/26RqIAMDFCAFJd6aTb314f1JK3vpXrs/0lb00y03bR95CJFgnVeo6qbudVHVy4GvH8/n/+amc3L+Yrrt/BAAuls50nW/+m/058I2TufXP7c5Vb7oiszt76fRqO5Eu7zHENPEEh+/l+UGOP3c6z372SJ7+5KEMFgcGfwQALvarUdLb0s2Rp07lix84mamtnUxf0U3ds5zksh78z/r5MVk/uzIo6Z9usni8n8Fyk+5sJ50pgz8CAJfkjqSkO10nM1XKoGT+0LKBBdYxBFR1Uk9V6Ux3U4ZrAUAA4NKEgDL8pUrqnoWAsK7Pt+Evmv4gAHDZvTp5WQKYLCZuAUAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAQAAAAAQAAEAAAAAEAABAAAAABAAAEAABAAAAABAAAYIP5/wFMbrhFjNJ5FwAAAABJRU5ErkJggg==","favicon64":"data:image/png;base64,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"};
+</script>
+<script>
+/* ============================================================
+   db.js — IndexedDB 数据层
+   存储结构：
+     books      { id, title, intro, createdAt, updatedAt }
+     nodes      { id, bookId, parentId, type:'folder'|'chapter',
+                  title, content, wordCount, createdAt, updatedAt }
+   ============================================================ */
+
+const DB_NAME = 'lavender-novel';
+const DB_VERSION = 2;
+
+let _db = null;
+
+function openDB() {
+  if (_db) return Promise.resolve(_db);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('books')) {
+        const bs = db.createObjectStore('books', { keyPath: 'id' });
+        bs.createIndex('updatedAt', 'updatedAt');
+      }
+      if (!db.objectStoreNames.contains('nodes')) {
+        const ns = db.createObjectStore('nodes', { keyPath: 'id' });
+        ns.createIndex('bookId', 'bookId');
+        ns.createIndex('parentId', 'parentId');
+        ns.createIndex('book_parent', ['bookId', 'parentId']);
+      }
+      // v2：应用设置（容量上限等）
+      if (!db.objectStoreNames.contains('settings')) {
+        db.createObjectStore('settings', { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = () => { _db = req.result; resolve(_db); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function tx(store, mode, fn) {
+  return openDB().then((db) => new Promise((resolve, reject) => {
+    const t = db.transaction(store, mode);
+    const s = t.objectStore(store);
+    let out;
+    try { out = fn(s); } catch (err) { reject(err); return; }
+    t.oncomplete = () => resolve(out && out.result !== undefined ? out.result : out);
+    t.onerror = () => reject(t.error);
+    t.onabort = () => reject(t.error);
+  }));
+}
+
+/** 生成唯一 id */
+function uid(prefix) {
+  return (prefix || 'id') + '-' + Date.now().toString(36) + '-' +
+         Math.random().toString(36).slice(2, 8);
+}
+
+/* ---------------- 书本 ---------------- */
+
+const Books = {
+  all() {
+    return tx('books', 'readonly', (s) => s.getAll()).then((list) =>
+      (list || []).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    );
+  },
+  get(id) {
+    return tx('books', 'readonly', (s) => s.get(id));
+  },
+  add(title, intro) {
+    const now = Date.now();
+    const book = {
+      id: uid('book'),
+      title: title || '未命名书本',
+      intro: intro || '',
+      createdAt: now,
+      updatedAt: now
+    };
+    return tx('books', 'readwrite', (s) => s.add(book)).then(() => book);
+  },
+  update(id, patch) {
+    return tx('books', 'readwrite', (s) => s.get(id)).then((book) => {
+      if (!book) throw new Error('书本不存在');
+      Object.assign(book, patch, { updatedAt: Date.now() });
+      return tx('books', 'readwrite', (s) => s.put(book)).then(() => book);
+    });
+  },
+  touch(id) {
+    return tx('books', 'readwrite', (s) => s.get(id)).then((book) => {
+      if (!book) return null;
+      book.updatedAt = Date.now();
+      return tx('books', 'readwrite', (s) => s.put(book)).then(() => book);
+    });
+  },
+  async remove(id) {
+    // 级联删除该书所有节点
+    const nodes = await Nodes.byBook(id);
+    await tx('nodes', 'readwrite', (s) => {
+      nodes.forEach((n) => s.delete(n.id));
+      return null;
+    });
+    return tx('books', 'readwrite', (s) => s.delete(id));
+  }
+};
+
+/* ---------------- 章节 / 文件夹节点 ---------------- */
+
+const Nodes = {
+  byBook(bookId) {
+    return tx('nodes', 'readonly', (s) => s.index('bookId').getAll(bookId))
+      .then((l) => l || []);
+  },
+  children(bookId, parentId) {
+    return this.byBook(bookId).then((list) => (list || [])
+      .filter((n) => (n.parentId || null) === (parentId || null))
+      .sort((a, b) => {
+        // 文件夹在前，其后按创建时间
+        if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      }));
+  },
+  /** 仅纯文本类节点（章节 + 设定 + 大纲），排除文件夹与时间线 */
+  isText(type) { return type === 'chapter' || type === 'setting' || type === 'outline'; },
+  /** 是否计入小说总字数：只有章节算，设定/大纲/时间线不算 */
+  countsTowardTotal(type) { return type === 'chapter'; },
+  get(id) {
+    return tx('nodes', 'readonly', (s) => s.get(id));
+  },
+  addFolder(bookId, parentId, title) {
+    const now = Date.now();
+    const node = {
+      id: uid('folder'), bookId, parentId,
+      type: 'folder', title: title || '新建文件夹',
+      content: '', wordCount: 0,
+      createdAt: now, updatedAt: now
+    };
+    return tx('nodes', 'readwrite', (s) => s.add(node)).then(() => node);
+  },
+  addChapter(bookId, parentId, title) {
+    const now = Date.now();
+    const node = {
+      id: uid('chapter'), bookId, parentId,
+      type: 'chapter', title: title || '新章节',
+      content: '', wordCount: 0,
+      createdAt: now, updatedAt: now
+    };
+    return tx('nodes', 'readwrite', (s) => s.add(node)).then(() => node);
+  },
+  /**
+   * 设定节点（分类列表结构）
+   * categories: [{ id, name, content }]
+   * @param kind 'character' | 'place' | 'world'
+   */
+  addSetting(bookId, parentId, title, kind) {
+    const now = Date.now();
+    const node = {
+      id: uid('setting'), bookId, parentId,
+      type: 'setting', kind: kind || 'character',
+      title: title || '新设定',
+      categories: [], wordCount: 0,
+      createdAt: now, updatedAt: now
+    };
+    return tx('nodes', 'readwrite', (s) => s.add(node)).then(() => node);
+  },
+  /** 故事大纲：纯文本 */
+  addOutline(bookId, parentId, title) {
+    const now = Date.now();
+    const node = {
+      id: uid('outline'), bookId, parentId,
+      type: 'outline', title: title || '故事大纲',
+      content: '', wordCount: 0,
+      createdAt: now, updatedAt: now
+    };
+    return tx('nodes', 'readwrite', (s) => s.add(node)).then(() => node);
+  },
+  /** 时间线：事件列表 [{ id, time, text }] */
+  addTimeline(bookId, parentId, title) {
+    const now = Date.now();
+    const node = {
+      id: uid('timeline'), bookId, parentId,
+      type: 'timeline', title: title || '时间线',
+      events: [], wordCount: 0,
+      createdAt: now, updatedAt: now
+    };
+    return tx('nodes', 'readwrite', (s) => s.add(node)).then(() => node);
+  },
+  update(id, patch) {
+    return tx('nodes', 'readwrite', (s) => s.get(id)).then((node) => {
+      if (!node) throw new Error('节点不存在');
+      Object.assign(node, patch, { updatedAt: Date.now() });
+      return tx('nodes', 'readwrite', (s) => s.put(node)).then(() => node);
+    });
+  },
+  /** 移动：改 parentId（原记录删除后重建，保持数据一致） */
+  move(id, newParentId) {
+    return tx('nodes', 'readwrite', (s) => s.get(id)).then((node) => {
+      if (!node) throw new Error('节点不存在');
+      node.parentId = newParentId;
+      node.updatedAt = Date.now();
+      return tx('nodes', 'readwrite', (s) => s.put(node)).then(() => node);
+    });
+  },
+  /** 直接写入一条已构造好的节点（导入用） */
+  putRaw(node) {
+    return tx('nodes', 'readwrite', (s) => s.put(node)).then(() => node);
+  },
+  /** 修复悬空 parentId：父节点不存在的一律挂到根目录 */
+  async repairOrphans(bookId) {
+    const all = await this.byBook(bookId);
+    const ids = new Set(all.map((n) => n.id));
+    const broken = all.filter((n) => n.parentId && !ids.has(n.parentId));
+    if (!broken.length) return 0;
+    await tx('nodes', 'readwrite', (s) => {
+      broken.forEach((n) => { n.parentId = null; s.put(n); });
+      return null;
+    });
+    return broken.length;
+  },
+  /** 递归删除节点及其所有子孙 */
+  remove(id) {
+    return this.get(id).then((node) => {
+      if (!node) return null;
+      return Nodes.byBook(node.bookId).then((all) => {
+        // 收集子树（含自身）
+        const ids = new Set([id]);
+        let grew = true;
+        while (grew) {
+          grew = false;
+          all.forEach((n) => {
+            if (!ids.has(n.id) && ids.has(n.parentId)) {
+              ids.add(n.id); grew = true;
+            }
+          });
+        }
+        return tx('nodes', 'readwrite', (s) => {
+          ids.forEach((i) => s.delete(i));
+          return ids.size;
+        });
+      });
+    });
+  },
+  /** 该节点是否为 targetId 的祖先（防止把文件夹移入自己的子目录） */
+  isAncestorOf(candidateId, targetId, allNodes) {
+    let cur = allNodes.find((n) => n.id === targetId);
+    const guard = new Set();
+    while (cur && cur.parentId) {
+      if (cur.parentId === candidateId) return true;
+      if (guard.has(cur.parentId)) return false;
+      guard.add(cur.parentId);
+      cur = allNodes.find((n) => n.id === cur.parentId);
+    }
+    return false;
+  },
+  /** 统计文件夹下的字数与条目数（设定单独计数，不计入小说总字数） */
+  folderWordCount(folderId, allNodes) {
+    const ids = new Set([folderId]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      allNodes.forEach((n) => {
+        if (!ids.has(n.id) && n.parentId && ids.has(n.parentId)) { ids.add(n.id); grew = true; }
+      });
+    }
+    let sum = 0, count = 0, settings = 0, settingWords = 0, others = 0;
+    allNodes.forEach((n) => {
+      if (n.id === folderId || !ids.has(n.id)) return;
+      if (n.type === 'chapter') { sum += n.wordCount || 0; count++; }
+      else if (n.type === 'setting') { settingWords += n.wordCount || 0; settings++; }
+      else if (n.type === 'outline' || n.type === 'timeline') others++;
+    });
+    return { words: sum, chapters: count, settings, settingWords, others };
+  }
+};
+
+/* ---------------- 应用设置 ---------------- */
+
+const Settings = {
+  get(key, fallback) {
+    return tx('settings', 'readonly', (s) => s.get(key)).then((row) =>
+      (row && row.value !== undefined) ? row.value : fallback
+    );
+  },
+  set(key, value) {
+    return tx('settings', 'readwrite', (s) => s.put({ key, value }));
+  }
+};
+
+/* ---------------- 字数统计 ---------------- */
+
+/** 中文按字计，英文/数字按词计，空白不计 */
+function countWords(text) {
+  if (!text) return 0;
+  const t = String(text);
+  const cjk = t.match(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u3040-\u30ff]/g);
+  const cjkCount = cjk ? cjk.length : 0;
+  const rest = t
+    .replace(/[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\u3040-\u30ff]/g, ' ')
+    .replace(/[\p{P}\p{S}]/gu, ' ');
+  const words = rest.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w));
+  return cjkCount + words.length;
+}
+</script>
+<script>
+/* ============================================================
+   app.js — 薰衣草夜 · 小说编辑器
+   ============================================================ */
+
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  bookId: null,          // 当前书本
+  folderId: null,        // 当前所在文件夹（null = 根目录）
+  chapterId: null,       // 当前编辑章节
+  clipboard: null,       // 移动剪贴板 { id, type } —— 移动=复制+粘贴后删除
+  nodesCache: []         // 当前书本全部节点缓存
+};
+
+/* ---------------- 工具 ---------------- */
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { el.hidden = true; }, 260);
+  }, 1900);
+}
+
+function vibrate(ms) {
+  if (navigator.vibrate) { try { navigator.vibrate(ms || 12); } catch (e) {} }
+}
+
+/* ---------------- 悬浮窗系统 ---------------- */
+
+const Modal = {
+  _onKey: null,
+
+  /**
+   * open({ title, desc, fields, actions })
+   *  fields:  [{ key, label, type:'text'|'textarea', value, placeholder }]
+   *  actions: [{ label, kind:'primary'|'danger'|'ghost', onClick(values, close) }]
+   *  返回 close 回调
+   */
+  open(opts) {
+    const ov = $('modal-overlay');
+    const fieldsWrap = $('modal-fields');
+    const actionsWrap = $('modal-actions');
+
+    $('modal-title').textContent = opts.title || '';
+    const descEl = $('modal-desc');
+    if (opts.desc) { descEl.textContent = opts.desc; descEl.hidden = false; }
+    else { descEl.textContent = ''; descEl.hidden = true; }
+
+    fieldsWrap.innerHTML = '';
+    const inputs = {};
+
+    if (opts.choices && opts.choices.length) {
+      const list = document.createElement('div');
+      list.className = 'choice-list';
+      opts.choices.forEach((c) => {
+        const item = document.createElement('button');
+        item.className = 'choice-item';
+        item.type = 'button';
+        item.innerHTML = `<span class="ci-icon">${c.icon || '✿'}</span>
+          <span class="ci-text"><b>${esc(c.label)}</b>${c.hint ? `<span>${esc(c.hint)}</span>` : ''}</span>`;
+        item.addEventListener('click', () => {
+          vibrate();
+          Modal.close();
+          c.onClick();
+        });
+        list.appendChild(item);
+      });
+      fieldsWrap.appendChild(list);
+    }
+
+    (opts.fields || []).forEach((f) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+
+      // 自定义渲染：不生成 label/input，完全交给调用方
+      if (f.type === 'custom' && typeof f.render === 'function') {
+        wrap.classList.add('field-custom');
+        fieldsWrap.appendChild(wrap);
+        f.render(wrap);
+        return;
+      }
+
+      const lab = document.createElement('label');
+      lab.textContent = f.label || '';
+      const inp = document.createElement(f.type === 'textarea' ? 'textarea' : 'input');
+      if (f.type !== 'textarea') inp.type = 'text';
+      inp.value = f.value != null ? f.value : '';
+      inp.placeholder = f.placeholder || '';
+      if (f.maxLength) inp.maxLength = f.maxLength;
+      inp.autocomplete = 'off';
+      inp.autocapitalize = 'off';
+      inp.spellcheck = false;
+      lab.setAttribute('for', '');
+      wrap.appendChild(lab);
+      wrap.appendChild(inp);
+      fieldsWrap.appendChild(wrap);
+      inputs[f.key] = inp;
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && f.type !== 'textarea') {
+          e.preventDefault();
+          const primary = actionsWrap.querySelector('.btn.primary');
+          if (primary) primary.click();
+        }
+      });
+    });
+
+    actionsWrap.innerHTML = '';
+    (opts.actions || []).forEach((a) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn ' + (a.kind || '');
+      btn.type = 'button';
+      btn.textContent = a.label;
+      btn.addEventListener('click', () => {
+        vibrate();
+        const values = {};
+        Object.keys(inputs).forEach((k) => { values[k] = inputs[k].value.trim(); });
+        const r = a.onClick ? a.onClick(values, Modal.close) : undefined;
+        if (r !== false && a.autoClose !== false) Modal.close();
+      });
+      actionsWrap.appendChild(btn);
+    });
+
+    ov.hidden = false;
+    const first = Object.values(inputs)[0];
+    if (first) setTimeout(() => { first.focus(); if (first.select) first.select(); }, 60);
+
+    this._onKey = (e) => { if (e.key === 'Escape') Modal.close(); };
+    document.addEventListener('keydown', this._onKey);
+    return Modal.close;
+  },
+
+  close() {
+    const ov = $('modal-overlay');
+    if (ov.hidden) return;
+    ov.hidden = true;
+    $('modal-fields').innerHTML = '';
+    $('modal-actions').innerHTML = '';
+    if (this._onKey) { document.removeEventListener('keydown', this._onKey); this._onKey = null; }
+  }
+};
+
+$('modal-overlay').addEventListener('click', (e) => {
+  if (e.target === $('modal-overlay')) Modal.close();
+});
+
+/* ---------------- 便捷弹窗 ---------------- */
+
+function confirmDialog(title, desc, onConfirm, confirmLabel) {
+  Modal.open({
+    title,
+    desc,
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      { label: confirmLabel || '确认删除', kind: 'danger', onClick: onConfirm }
+    ]
+  });
+}
+
+function promptDialog(title, fields, onConfirm, confirmLabel) {
+  Modal.open({
+    title,
+    fields,
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      { label: confirmLabel || '确认', kind: 'primary', onClick: (vals) => onConfirm(vals) }
+    ]
+  });
+}
+
+/* ---------------- 长按菜单 ---------------- */
+
+const Sheet = {
+  open(headTitle, headSub, items) {
+    const ov = $('sheet-overlay');
+    const head = $('sheet-head');
+    head.innerHTML = `<b>${esc(headTitle)}</b>${headSub ? `<span>${esc(headSub)}</span>` : ''}`;
+
+    const wrap = $('sheet-items');
+    wrap.innerHTML = '';
+    items.forEach((it) => {
+      const btn = document.createElement('button');
+      btn.className = 'sheet-item ' + (it.kind || '');
+      btn.type = 'button';
+      btn.innerHTML = `<span class="si-icon">${it.icon || '•'}</span><span>${esc(it.label)}</span>` +
+        (it.sub ? `<span class="si-sub">${esc(it.sub)}</span>` : '');
+      btn.addEventListener('click', () => {
+        vibrate();
+        Sheet.close();
+        setTimeout(() => it.onClick(), 40);
+      });
+      wrap.appendChild(btn);
+    });
+
+    const cancel = document.createElement('button');
+    cancel.className = 'sheet-cancel';
+    cancel.type = 'button';
+    cancel.textContent = '取消';
+    cancel.addEventListener('click', () => Sheet.close());
+    wrap.appendChild(cancel);
+
+    ov.hidden = false;
+  },
+  close() { $('sheet-overlay').hidden = true; }
+};
+
+$('sheet-overlay').addEventListener('click', (e) => {
+  if (e.target === $('sheet-overlay')) Sheet.close();
+});
+
+/**
+ * 绑定长按（触屏 + 鼠标），800ms 触发；触发后抑制随后的 click
+ */
+function bindLongPress(el, handler) {
+  let timer = null, fired = false, startX = 0, startY = 0, moved = false;
+
+  const start = (x, y) => {
+    fired = false; moved = false;
+    startX = x; startY = y;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      fired = true;
+      vibrate(26);
+      handler({ el, longPress: true });
+    }, 520);
+  };
+  const move = (x, y) => {
+    if (Math.abs(x - startX) > 12 || Math.abs(y - startY) > 12) {
+      moved = true;
+      clearTimeout(timer);
+    }
+  };
+  const cancel = () => { clearTimeout(timer); };
+
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    start(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) move(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    cancel();
+    if (fired) { e.preventDefault(); }
+  });
+  el.addEventListener('touchcancel', cancel);
+
+  // 鼠标（桌面 / 预览）
+  el.addEventListener('mousedown', (e) => { if (e.button === 0) start(e.clientX, e.clientY); });
+  el.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+  el.addEventListener('mouseup', cancel);
+  el.addEventListener('mouseleave', cancel);
+
+  // 长按触发后拦截 click
+  el.addEventListener('click', (e) => {
+    if (fired) { e.preventDefault(); e.stopPropagation(); fired = false; }
+  }, true);
+
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    vibrate(26);
+    handler({ el, longPress: true });
+  });
+}
+
+/* ---------------- 视图切换 ---------------- */
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
+  $('view-' + name).classList.add('active');
+  Sheet.close();
+  Modal.close();
+}
+
+/* ============================================================
+   视图 1：主页 — 书本列表
+   ============================================================ */
+
+async function renderBooks() {
+  const books = await Books.all();
+  const wrap = $('books-list');
+  const empty = $('books-empty');
+  wrap.innerHTML = '';
+
+  // 书本列表变化时同步刷新容量条
+  if (typeof refreshStorage === 'function') refreshStorage();
+
+  if (!books.length) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+
+  const allNodes = [];
+  for (const b of books) {
+    const ns = await Nodes.byBook(b.id);
+    allNodes.push(...ns);
+  }
+
+  books.forEach((b, i) => {
+    const ns = allNodes.filter((n) => n.bookId === b.id);
+    // 总字数只统计章节；设定另有计数，不计入小说正文总字数
+    const chapters = ns.filter((n) => n.type === 'chapter');
+    const settings = ns.filter((n) => n.type === 'setting');
+    const words = chapters.reduce((s, n) => s + (n.wordCount || 0), 0);
+    const settingWords = settings.reduce((s, n) => s + (n.wordCount || 0), 0);
+
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.style.animationDelay = Math.min(i * 45, 400) + 'ms';
+    card.innerHTML = `
+      <div class="book-spine">${esc((b.title || '书').trim().charAt(0) || '书')}</div>
+      <div class="book-info">
+        <h3>${esc(b.title)}</h3>
+        <p class="${b.intro ? '' : 'placeholder'}">${esc(b.intro || '还没有介绍，长按卡片可以修改')}</p>
+        <div class="book-meta">
+          <span>${chapters.length} 章</span>
+          <span class="dot"></span>
+          <span>${words} 字</span>
+          ${settings.length ? `<span class="dot"></span><span class="meta-setting">${settings.length} 条设定 · ${settingWords} 字</span>` : ''}
+          <span class="dot"></span>
+          <span>${fmtTime(b.updatedAt)}</span>
+        </div>
+      </div>`;
+
+    card.addEventListener('click', () => openBook(b.id));
+    bindLongPress(card, () => bookMenu(b));
+    wrap.appendChild(card);
+  });
+}
+
+function bookMenu(book) {
+  Sheet.open(book.title, '书本操作', [
+    {
+      label: '修改标题与介绍', icon: '✎',
+      onClick: () => editBookDialog(book)
+    },
+    {
+      label: '导出为 Markdown', icon: '⬇', sub: '整本 / 仅章节',
+      onClick: () => exportDialog(book)
+    },
+    {
+      label: '导出 JSON 备份', icon: '📦', sub: '完整数据 · 可搬设备',
+      onClick: () => exportJson(book)
+    },
+    {
+      label: '删除书本', icon: '🗑', kind: 'danger',
+      onClick: () => {
+        confirmDialog(
+          '删除书本',
+          `确定删除《${book.title}》吗？该书的所有章节与文件夹都会一并删除，且无法恢复。`,
+          async () => {
+            await Books.remove(book.id);
+            toast('已删除');
+            renderBooks();
+          }
+        );
+      }
+    }
+  ]);
+}
+
+function createBookDialog() {
+  Modal.open({
+    title: '创建小说书本',
+    fields: [
+      { key: 'title', label: '书名', placeholder: '例如：薰衣草色的夜晚' },
+      { key: 'intro', label: '介绍', type: 'textarea', placeholder: '写一句话介绍这个故事…' }
+    ],
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      {
+        label: '创建', kind: 'primary',
+        onClick: async (v) => {
+          if (!v.title) { toast('请输入书名'); return false; }
+          await Books.add(v.title, v.intro);
+          toast('书本已创建');
+          renderBooks();
+        }
+      }
+    ]
+  });
+}
+
+function editBookDialog(book) {
+  Modal.open({
+    title: '修改书本信息',
+    fields: [
+      { key: 'title', label: '书名', value: book.title },
+      { key: 'intro', label: '介绍', type: 'textarea', value: book.intro || '' }
+    ],
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      {
+        label: '保存', kind: 'primary',
+        onClick: async (v) => {
+          if (!v.title) { toast('书名不能为空'); return false; }
+          await Books.update(book.id, { title: v.title, intro: v.intro });
+          toast('已保存');
+          renderBooks();
+        }
+      }
+    ]
+  });
+}
+
+$('btn-new-book').addEventListener('click', () => { vibrate(); createBookDialog(); });
+
+/* ============================================================
+   视图 2：章节管理 — 文件管理器
+   ============================================================ */
+
+async function openBook(bookId) {
+  state.bookId = bookId;
+  state.folderId = null;
+  const book = await Books.get(bookId);
+  if (!book) { toast('书本不存在'); return; }
+  $('chapter-book-title').textContent = book.title;
+  showView('chapters');
+  await renderChapters();
+}
+
+function renderChapterActions() {
+  const wrap = $('chapter-actions');
+  wrap.innerHTML = '';
+
+  // 搜索
+  const searchBtn = document.createElement('button');
+  searchBtn.className = 'icon-btn';
+  searchBtn.id = 'btn-search';
+  searchBtn.title = '搜索';
+  searchBtn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  searchBtn.addEventListener('click', () => { vibrate(); openSearch(); });
+  wrap.appendChild(searchBtn);
+
+  // 创建
+  const btn = document.createElement('button');
+  btn.className = 'icon-btn accent';
+  btn.title = '创建';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>';
+  btn.addEventListener('click', () => { vibrate(); createDialog(); });
+  wrap.appendChild(btn);
+}
+
+async function renderChapters() {
+  renderChapterActions();
+  const all = await Nodes.byBook(state.bookId);
+  state.nodesCache = all;
+
+  const list = $('chapter-list');
+  list.innerHTML = '';
+
+  // 面包屑
+  const crumbs = buildCrumbs(all);
+  const bar = document.createElement('div');
+  bar.className = 'breadcrumb-bar';
+  crumbs.forEach((c, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'crumb-sep';
+      sep.textContent = '›';
+      bar.appendChild(sep);
+    }
+    const el = document.createElement('span');
+    el.className = 'crumb' + (i === crumbs.length - 1 ? ' current' : '');
+    el.textContent = c.label;
+    el.addEventListener('click', () => {
+      state.folderId = c.id;
+      renderChapters();
+    });
+    bar.appendChild(el);
+  });
+  if (state.clipboard) {
+    const tag = document.createElement('span');
+    tag.className = 'crumb-sep';
+    tag.style.marginLeft = 'auto';
+    tag.textContent = '📋 待移动';
+    bar.appendChild(tag);
+  }
+  list.appendChild(bar);
+
+  const children = all
+    .filter((n) => n.parentId === state.folderId)
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+
+  const parentIsRoot = state.folderId === null;
+
+  if (!children.length) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'text-align:center;padding:52px 20px;color:var(--text-3);font-size:13px;';
+    hint.innerHTML = `<div style="font-size:38px;opacity:.5;margin-bottom:10px">✿</div>
+      这里还空着<br><span style="font-size:12px">点击右上角 ＋ 创建文件夹、章节或设定</span>`;
+    list.appendChild(hint);
+  }
+
+  children.forEach((node, i) => {
+    const row = document.createElement('div');
+    row.className = 'fm-row fm-' + node.type;
+    if (state.clipboard && state.clipboard.id === node.id) row.classList.add('move-pending');
+    row.style.animationDelay = Math.min(i * 35, 350) + 'ms';
+
+    const isFolder = node.type === 'folder';
+    const isSetting = node.type === 'setting';
+    const isTimeline = node.type === 'timeline';
+
+    let sub = '';
+    let tail = '';
+    if (isFolder) {
+      const st = Nodes.folderWordCount(node.id, all);
+      const bits = [];
+      if (st.chapters) bits.push(`${st.chapters} 章`);
+      if (st.settings) bits.push(`${st.settings} 条设定`);
+      if (st.others) bits.push(`${st.others} 份资料`);
+      sub = bits.length ? bits.join(' · ') : '空文件夹';
+      tail = st.words ? st.words + ' 字' : '';
+    } else if (isSetting) {
+      // 设定不计入小说总字数，尾部标注「设定」；显示分类条数
+      const cats = (node.categories || []).length;
+      sub = KIND_LABEL[node.kind || 'character'] + ' · ' + (cats ? `${cats} 个分类` : '暂无分类');
+      tail = (node.wordCount || 0) + ' 字 · 设定';
+    } else if (isTimeline) {
+      const n = (node.events || []).length;
+      sub = `${n} 个事件 · ` + fmtTime(node.updatedAt);
+      tail = n ? `${n} 事件` : '暂无事件';
+    } else if (node.type === 'outline') {
+      sub = '故事大纲 · ' + fmtTime(node.updatedAt);
+      tail = (node.wordCount || 0) + ' 字 · 大纲';
+    } else {
+      sub = fmtTime(node.updatedAt);
+      tail = (node.wordCount || 0) + ' 字';
+    }
+
+    row.innerHTML = `
+      ${state.clipboard && state.clipboard.id === node.id ? '<span class="fm-move-tag">待移动</span>' : ''}
+      <span class="fm-icon">${nodeIcon(node)}</span>
+      <span class="fm-main">
+        <span class="fm-name">${esc(node.title)}</span>
+        <span class="fm-sub">${esc(sub)}</span>
+      </span>
+      <span class="fm-tail">${esc(tail)}</span>
+      ${isFolder
+        ? '<span class="fm-chevron">›</span>'
+        : '<span class="fm-chevron" style="color:var(--purple-soft);opacity:.85">✎</span>'}`;
+
+    row.addEventListener('click', () => {
+      if (isFolder) {
+        state.folderId = node.id;
+        renderChapters();
+      } else if (isTimeline) {
+        openTimeline(node.id);
+      } else if (isSetting) {
+        openSetting(node.id);
+      } else {
+        openChapter(node.id);
+      }
+    });
+    bindLongPress(row, () => nodeMenu(node, all));
+    list.appendChild(row);
+  });
+}
+
+/* 设定类别元数据 */
+const KIND_LABEL = { character: '人物', place: '地点', world: '世界观' };
+const KIND_ICON  = { character: '👤', place: '📍', world: '🌐' };
+const KIND_DESC  = {
+  character: '人物档案、性格、关系',
+  place: '城池、场景、地理',
+  world: '规则、历史、体系'
+};
+/** 各类别新建分类时的建议名 */
+const KIND_CAT_HINT = {
+  character: '例如：性格、外貌、背景、人物关系',
+  place: '例如：环境、风物、重要场景',
+  world: '例如：世界规则、历史、力量体系'
+};
+/** 各类别新建分类的默认名 */
+const KIND_CAT_DEFAULT = {
+  character: '新分类',
+  place: '新分类',
+  world: '新分类'
+};
+
+/** 节点类型图标：文件夹 / 章节 / 设定 / 时间线 / 故事大纲 */
+function nodeIcon(node) {
+  switch (node.type) {
+    case 'folder':   return '📁';
+    case 'setting':  return KIND_ICON[node.kind || 'character'];
+    case 'timeline': return '🕰';
+    case 'outline':  return '🧭';
+    default:         return '📄';
+  }
+}
+
+/** 类型中文名 */
+function typeLabel(node) {
+  switch (node.type) {
+    case 'folder':   return '文件夹';
+    case 'setting':  return `${KIND_LABEL[node.kind || 'character']}设定`;
+    case 'timeline': return '时间线';
+    case 'outline':  return '故事大纲';
+    default:         return '章节';
+  }
+}
+
+/** 标题为空时的兜底名（按节点类型） */
+function defaultTitle(node) {
+  if (!node) return '未命名';
+  switch (node.type) {
+    case 'setting':  return '新' + KIND_LABEL[node.kind || 'character'];
+    case 'folder':   return '新建文件夹';
+    case 'timeline': return '新时间线';
+    case 'outline':  return '新大纲';
+    default:         return '未命名章节';
+  }
+}
+
+function buildCrumbs(all) {
+  const crumbs = [{ id: null, label: '根目录' }];
+  if (state.folderId) {
+    const chain = [];
+    let cur = all.find((n) => n.id === state.folderId);
+    const guard = new Set();
+    while (cur && !guard.has(cur.id)) {
+      guard.add(cur.id);
+      chain.unshift({ id: cur.id, label: cur.title });
+      cur = cur.parentId ? all.find((n) => n.id === cur.parentId) : null;
+    }
+    crumbs.push(...chain);
+  }
+  return crumbs;
+}
+
+/* ---------------- 创建（文件夹 / 章节 / 设定 / 时间线 / 大纲） ---------------- */
+
+function createDialog() {
+  const inFolder = state.folderId
+    ? (state.nodesCache.find((n) => n.id === state.folderId) || {}).title
+    : '根目录';
+  Modal.open({
+    title: '创建',
+    desc: `创建位置：${inFolder}`,
+    choices: [
+      {
+        icon: '📝', label: '章节', hint: '直接创建「新章节」，进入写作',
+        onClick: async () => {
+          const node = await Nodes.addChapter(state.bookId, state.folderId, '新章节');
+          await Books.touch(state.bookId);
+          toast('已创建章节');
+          await renderChapters();
+          openChapter(node.id);
+        }
+      },
+      {
+        icon: '👤', label: '设定', hint: '角色 · 地点 · 世界观',
+        onClick: () => settingKindDialog()
+      },
+      {
+        icon: '🕰', label: '时间线', hint: '事件列表：时间 + 事件',
+        onClick: () => {
+          promptDialog('创建时间线', [
+            { key: 'title', label: '时间线名称', value: '新时间线', placeholder: '例如：主线纪年' }
+          ], async (v) => {
+            const title = (v.title || '').trim();
+            if (!title) { toast('请输入名称'); return; }
+            const node = await Nodes.addTimeline(state.bookId, state.folderId, title);
+            await Books.touch(state.bookId);
+            toast('时间线已创建');
+            await renderChapters();
+            openTimeline(node.id);
+          }, '创建');
+        }
+      },
+      {
+        icon: '🧭', label: '故事大纲', hint: '纯文本，梳理整体脉络',
+        onClick: () => {
+          promptDialog('创建故事大纲', [
+            { key: 'title', label: '大纲名称', value: '新大纲', placeholder: '例如：全书大纲' }
+          ], async (v) => {
+            const title = (v.title || '').trim();
+            if (!title) { toast('请输入名称'); return; }
+            const node = await Nodes.addOutline(state.bookId, state.folderId, title);
+            await Books.touch(state.bookId);
+            toast('故事大纲已创建');
+            await renderChapters();
+            openChapter(node.id);
+          }, '创建');
+        }
+      },
+      {
+        icon: '📁', label: '文件夹', hint: '先输入名字，用于整理章节',
+        onClick: () => {
+          promptDialog('创建文件夹', [
+            { key: 'title', label: '文件夹名称', placeholder: '例如：第一卷 · 夜的开端' }
+          ], async (v) => {
+            if (!v.title) { toast('请输入名称'); return; }
+            await Nodes.addFolder(state.bookId, state.folderId, v.title);
+            await Books.touch(state.bookId);
+            toast('文件夹已创建');
+            renderChapters();
+          }, '创建');
+        }
+      }
+    ],
+    actions: [{ label: '取消', kind: 'ghost' }]
+  });
+}
+
+/** 选择设定类型：人物 / 地点 / 世界观 */
+function settingKindDialog() {
+  Modal.open({
+    title: '创建设定',
+    desc: '选择设定的类型',
+    choices: ['character', 'place', 'world'].map((k) => ({
+      icon: KIND_ICON[k],
+      label: KIND_LABEL[k],
+      hint: KIND_DESC[k],
+      onClick: () => createSettingDialog(k)
+    })),
+    actions: [{ label: '取消', kind: 'ghost' }]
+  });
+}
+
+/** 设定命名 -> 创建并进入分类编辑器 */
+function createSettingDialog(kind) {
+  const label = KIND_LABEL[kind];
+  promptDialog(`新建${label}设定`, [
+    {
+      key: 'title',
+      label: `${label}名称`,
+      value: '新' + label,
+      placeholder: kind === 'character' ? '例如：林砚' : kind === 'place' ? '例如：紫雾巷' : '例如：香料体系'
+    }
+  ], async (v) => {
+    const title = (v.title || '').trim();
+    if (!title) { toast('请输入名称'); return; }
+    const node = await Nodes.addSetting(state.bookId, state.folderId, title, kind);
+    await Books.touch(state.bookId);
+    toast(`${label}设定已创建`);
+    await renderChapters();
+    openSetting(node.id);
+  }, '创建');
+}
+
+/* ---------------- 长按菜单 ---------------- */
+
+function nodeMenu(node, all) {
+  const items = [
+    {
+      label: '重命名', icon: '✎',
+      onClick: () => {
+        promptDialog('重命名', [
+          { key: 'title', label: node.type === 'folder' ? '文件夹名称'
+              : node.type === 'setting' ? KIND_LABEL[node.kind || 'character'] + '名称'
+              : node.type === 'timeline' ? '时间线名称'
+              : node.type === 'outline' ? '大纲名称'
+              : '章节标题', value: node.title }
+        ], async (v) => {
+          if (!v.title) { toast('名称不能为空'); return; }
+          await Nodes.update(node.id, { title: v.title });
+          toast('已重命名');
+          renderChapters();
+        }, '保存');
+      }
+    },
+    {
+      label: '移动', icon: '✂', sub: '复制到剪贴板',
+      onClick: () => {
+        state.clipboard = { id: node.id, type: node.type };
+        toast(`已剪切「${node.title}」，长按目标文件夹粘贴`);
+        renderChapters();
+      }
+    }
+  ];
+
+  // 粘贴：仅文件夹长按菜单上显示，且必须存在移动剪贴板
+  if (node.type === 'folder' && state.clipboard) {
+    const clip = state.clipboard;
+    const src = all.find((n) => n.id === clip.id);
+    const illegal =
+      !src ||
+      src.id === node.id ||                              // 不能粘贴到自己
+      Nodes.isAncestorOf(src.id, node.id, all) ||        // 不能粘贴进自己的子目录
+      src.parentId === node.id;                          // 已在目标目录内
+
+    items.push({
+      label: '粘贴', icon: '📋', kind: 'paste',
+      sub: src ? `移动「${src.title}」到此处` : '',
+      onClick: async () => {
+        if (illegal) { toast('无法移动到该位置'); return; }
+        await Nodes.move(clip.id, node.id);
+        state.clipboard = null;
+        await Books.touch(state.bookId);
+        toast(`已移动到「${node.title}」`);
+        renderChapters();
+      }
+    });
+  }
+
+  items.push({
+    label: '删除', icon: '🗑', kind: 'danger',
+    onClick: () => {
+      const extra = node.type === 'folder' ? '文件夹内的所有内容也会一并删除。' : '';
+      confirmDialog(
+        '确认删除',
+        `确定删除「${node.title}」吗？${extra}此操作无法恢复。`,
+        async () => {
+          await Nodes.remove(node.id);
+          if (state.clipboard && state.clipboard.id === node.id) state.clipboard = null;
+          await Books.touch(state.bookId);
+          toast('已删除');
+          renderChapters();
+        }
+      );
+    }
+  });
+
+  Sheet.open(node.title, typeLabel(node), items);
+}
+
+$('btn-back-books').addEventListener('click', () => {
+  vibrate();
+  state.bookId = null;
+  state.folderId = null;
+  state.clipboard = null;
+  showView('books');
+  renderBooks();
+});
+
+/* ============================================================
+   视图 3：写作编辑器
+   ============================================================ */
+
+let editorNode = null;
+let saveTimer = null;
+let titleSaveTimer = null;
+let editorBusy = false;   // 正在切换节点时抑制 blur 写入
+
+/** 切换节点前，把当前编辑内容落库（避免丢失 / 写错对象） */
+async function flushEditor() {
+  if (!editorNode) return;
+  clearTimeout(saveTimer);
+  clearTimeout(titleSaveTimer);
+  const target = editorNode.id;
+  const text = $('editor-body').value;
+  const n = countWords(text);
+  const rawTitle = $('editor-title').value.trim();
+  const title = rawTitle || defaultTitle(editorNode);
+  const node = await Nodes.get(target);
+  if (!node) return;
+  await Nodes.update(target, { content: text, wordCount: n, title });
+  await Books.touch(node.bookId);
+}
+
+async function openChapter(nodeId) {
+  // 若已打开另一个节点，先保存它，再切换
+  if (editorNode && editorNode.id !== nodeId) {
+    editorBusy = true;
+    try { await flushEditor(); } finally { editorBusy = false; }
+  }
+  const node = await Nodes.get(nodeId);
+  if (!node) { toast('内容不存在'); return; }
+  // 时间线与设定走各自的独立编辑器
+  if (node.type === 'timeline') { openTimeline(nodeId); return; }
+  if (node.type === 'setting') { openSetting(nodeId); return; }
+
+  editorNode = node;
+  state.chapterId = nodeId;
+
+  $('editor-title').value = node.title || '';
+  $('editor-title').placeholder = node.type === 'outline' ? '大纲名称' : '章节标题';
+  $('editor-body').placeholder = node.type === 'outline'
+    ? '全书脉络、分卷结构、关键转折、结局走向……'
+    : '在这里写下你的故事……\n\n夜色如薰衣草般铺开。';
+  $('editor-body').value = node.content || '';
+
+  // 顶栏标示当前类型
+  const tag = $('editor-kind-tag');
+  if (node.type === 'outline') {
+    tag.textContent = '🧭 故事大纲';
+    tag.hidden = false;
+  } else {
+    tag.hidden = true;
+  }
+
+  updateEditorCount(node.wordCount || 0);
+  setEditorStatus('已保存');
+  showView('editor');
+
+  // 进入时若标题仍是默认值，选中方便直接覆盖
+  setTimeout(() => {
+    const body = $('editor-body');
+    if (!body.value) body.focus();
+  }, 120);
+}
+
+function updateEditorCount(n) {
+  const chip = $('editor-count');
+  chip.innerHTML = `<b>${n}</b><span>字</span>`;
+  chip.classList.remove('pulse');
+  void chip.offsetWidth;
+  chip.classList.add('pulse');
+}
+
+function setEditorStatus(text) {
+  const el = $('editor-status');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(setEditorStatus._t);
+  setEditorStatus._t = setTimeout(() => el.classList.remove('show'), 1600);
+}
+
+/* ---- 正文输入：实时字数 + 自动保存 ---- */
+$('editor-body').addEventListener('input', () => {
+  if (!editorNode) return;
+  const target = editorNode.id;          // 快照节点，防止切换后写错对象
+  const text = $('editor-body').value;
+  const n = countWords(text);
+  $('editor-count').innerHTML = `<b>${n}</b><span>字</span>`;
+
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    if (!editorNode || editorNode.id !== target) return;
+    await Nodes.update(target, { content: text, wordCount: n });
+    if (editorNode && editorNode.id === target) {
+      editorNode.content = text;
+      editorNode.wordCount = n;
+    }
+    const fresh = await Nodes.get(target);
+    if (fresh) await Books.touch(fresh.bookId);
+    if (editorNode && editorNode.id === target) {
+      setEditorStatus('已自动保存 · ' + fmtTime(Date.now()).slice(11));
+    }
+  }, 600);
+});
+
+/* ---- 正文失焦立即保存 ---- */
+$('editor-body').addEventListener('blur', async () => {
+  if (!editorNode || editorBusy) return;
+  // 快照当前节点，异步过程中若已切走则放弃，避免把空内容写到新节点
+  const target = editorNode.id;
+  clearTimeout(saveTimer);
+  const text = $('editor-body').value;
+  const n = countWords(text);
+  await Nodes.update(target, { content: text, wordCount: n });
+  if (editorNode && editorNode.id === target) {
+    editorNode.content = text;
+    editorNode.wordCount = n;
+    setEditorStatus('已保存');
+  }
+});
+
+/* ---- 标题输入：内外同步（延迟写库，返回列表即在） ---- */
+$('editor-title').addEventListener('input', () => {
+  if (!editorNode) return;
+  const target = editorNode.id;
+  const title = $('editor-title').value;
+  clearTimeout(titleSaveTimer);
+  titleSaveTimer = setTimeout(async () => {
+    if (!editorNode || editorNode.id !== target) return;
+    const v = title.trim() || defaultTitle(editorNode);
+    await Nodes.update(target, { title: v });
+    if (editorNode && editorNode.id === target) {
+      editorNode.title = v;
+      setEditorStatus('标题已保存');
+    }
+  }, 400);
+});
+
+$('editor-title').addEventListener('blur', async () => {
+  if (!editorNode) return;
+  clearTimeout(titleSaveTimer);
+  let title = $('editor-title').value.trim();
+  if (!title) { title = defaultTitle(editorNode); $('editor-title').value = title; }
+  await Nodes.update(editorNode.id, { title });
+  editorNode.title = title;
+  await Books.touch(editorNode.bookId);
+});
+
+$('editor-title').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); $('editor-body').focus(); }
+});
+
+/* ---- 返回章节列表：先落库，保证字数同步 ---- */
+$('btn-back-chapters').addEventListener('click', async () => {
+  vibrate();
+  await flushEditor();
+  editorNode = null;
+  state.chapterId = null;
+  showView('chapters');
+  await renderChapters();
+});
+
+/* ============================================================
+   初始化
+   ============================================================ */
+
+window.addEventListener('beforeunload', () => {
+  if (editorNode) {
+    const text = $('editor-body').value;
+    const n = countWords(text);
+    Nodes.update(editorNode.id, { content: text, wordCount: n });
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && editorNode) {
+    const text = $('editor-body').value;
+    const n = countWords(text);
+    Nodes.update(editorNode.id, { content: text, wordCount: n });
+  }
+});
+
+(async function init() {
+  try {
+    await openDB();
+    await renderBooks();
+    await refreshStorage();
+  } catch (e) {
+    console.error(e);
+    toast('数据库初始化失败：' + e.message);
+  }
+})();
+</script>
+<script>
+/* ============================================================
+   视图 4：时间线编辑器（事件列表）
+   左：时间（窄）  右：事件文本（宽）
+   ============================================================ */
+
+let timelineNode = null;
+let tlSaveTimer = null;
+let tlTitleTimer = null;
+let tlBusy = false;
+
+/** 事件字数合计（时间 + 事件文本） */
+function timelineWordCount(node) {
+  let n = 0;
+  (node.events || []).forEach((ev) => {
+    n += countWords(ev.text || '');
+  });
+  return n;
+}
+
+function newEventId() {
+  return 'ev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+async function openTimeline(nodeId) {
+  if (timelineNode && timelineNode.id !== nodeId) {
+    tlBusy = true;
+    try { await flushTimeline(); } finally { tlBusy = false; }
+  }
+  const node = await Nodes.get(nodeId);
+  if (!node) { toast('时间线不存在'); return; }
+  if (!Array.isArray(node.events)) node.events = [];
+  timelineNode = node;
+  state.chapterId = nodeId;
+
+  $('timeline-title').value = node.title || '';
+  renderTimelineEvents();
+  showView('timeline');
+
+  if (!node.events.length) {
+    setTimeout(() => addEvent(true), 260);
+  }
+}
+
+function renderTimelineEvents() {
+  const list = $('timeline-list');
+  list.innerHTML = '';
+  const events = (timelineNode && timelineNode.events) || [];
+
+  if (!events.length) {
+    const empty = document.createElement('div');
+    empty.className = 'tl-empty';
+    empty.innerHTML = '<span class="ti">🕰</span>还没有事件<br><span style="font-size:12px">点击右上角 ＋ 创建新事件</span>';
+    list.appendChild(empty);
+    return;
+  }
+
+  events.forEach((ev, i) => {
+    const row = document.createElement('div');
+    row.className = 'tl-row';
+    row.style.animationDelay = Math.min(i * 30, 300) + 'ms';
+
+    const time = document.createElement('input');
+    time.className = 'tl-time';
+    time.type = 'text';
+    time.value = ev.time || '';
+    time.placeholder = '时间';
+    time.autocomplete = 'off';
+    time.spellcheck = false;
+
+    const text = document.createElement('textarea');
+    text.className = 'tl-text';
+    text.rows = 1;
+    text.value = ev.text || '';
+    text.placeholder = '发生了什么……';
+    text.spellcheck = false;
+
+    const del = document.createElement('button');
+    del.className = 'tl-del';
+    del.type = 'button';
+    del.title = '删除事件';
+    del.textContent = '✕';
+
+    // 自适应高度
+    const autosize = () => {
+      text.style.height = 'auto';
+      text.style.height = Math.max(42, text.scrollHeight) + 'px';
+    };
+
+    time.addEventListener('input', () => {
+      ev.time = time.value;
+      scheduleTimelineSave();
+    });
+
+    text.addEventListener('input', () => {
+      ev.text = text.value;
+      autosize();
+      scheduleTimelineSave();
+    });
+    text.addEventListener('blur', () => {
+      if (tlBusy) return;
+      tlSaveNow();
+    });
+    text.addEventListener('keydown', (e) => {
+      // Enter 新建下一个事件，方便连续录入
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        addEvent(false, i + 1);
+      }
+    });
+
+    del.addEventListener('click', () => {
+      vibrate();
+      const preview = (ev.text || '').trim().slice(0, 14) || (ev.time || '').trim() || '这条事件';
+      confirmDialog('删除事件', `确定删除「${preview}」吗？此操作无法恢复。`, async () => {
+        const idx = timelineNode.events.findIndex((x) => x.id === ev.id);
+        if (idx > -1) timelineNode.events.splice(idx, 1);
+        await tlSaveNow();
+        renderTimelineEvents();
+        toast('事件已删除');
+      });
+    });
+
+    row.appendChild(time);
+    row.appendChild(text);
+    row.appendChild(del);
+    list.appendChild(row);
+    autosize();
+  });
+
+  const hint = document.createElement('div');
+  hint.className = 'tl-hint';
+  hint.textContent = '按 Enter 快速添加下一个事件 · Shift+Enter 换行';
+  list.appendChild(hint);
+}
+
+/** 在指定位置插入新事件并聚焦 */
+async function addEvent(focusFirst, atIndex) {
+  if (!timelineNode) return;
+  timelineNode.events = timelineNode.events || [];
+  const ev = { id: newEventId(), time: '', text: '' };
+  const idx = (typeof atIndex === 'number') ? atIndex : timelineNode.events.length;
+  timelineNode.events.splice(idx, 0, ev);
+  renderTimelineEvents();
+  await tlSaveNow();
+
+  const rows = document.querySelectorAll('.tl-row');
+  const target = rows[focusFirst ? 0 : Math.min(idx, rows.length - 1)];
+  if (target) {
+    const firstInput = focusFirst ? target.querySelector('.tl-time') : target.querySelector('.tl-text');
+    firstInput.focus();
+  }
+}
+
+function scheduleTimelineSave() {
+  clearTimeout(tlSaveTimer);
+  tlSaveTimer = setTimeout(tlSaveNow, 600);
+}
+
+async function tlSaveNow() {
+  if (!timelineNode) return;
+  clearTimeout(tlSaveTimer);
+  const target = timelineNode.id;
+  const events = timelineNode.events || [];
+  const words = timelineWordCount({ events });
+  const title = $('timeline-title').value.trim() || '新时间线';
+  const node = await Nodes.get(target);
+  if (!node) return;
+  await Nodes.update(target, { events, wordCount: words, title });
+  if (timelineNode && timelineNode.id === target) timelineNode.wordCount = words;
+  await Books.touch(node.bookId);
+}
+
+/** 离开时间线前落库 */
+async function flushTimeline() {
+  if (!timelineNode) return;
+  clearTimeout(tlSaveTimer);
+  clearTimeout(tlTitleTimer);
+  await tlSaveNow();
+}
+
+/* ---- 标题防抖保存 ---- */
+$('timeline-title').addEventListener('input', () => {
+  if (!timelineNode) return;
+  const target = timelineNode.id;
+  const val = $('timeline-title').value;
+  clearTimeout(tlTitleTimer);
+  tlTitleTimer = setTimeout(async () => {
+    if (!timelineNode || timelineNode.id !== target) return;
+    await Nodes.update(target, { title: val.trim() || '新时间线' });
+    const fresh = await Nodes.get(target);
+    if (fresh) await Books.touch(fresh.bookId);
+  }, 400);
+});
+
+$('timeline-title').addEventListener('blur', async () => {
+  if (!timelineNode || tlBusy) return;
+  clearTimeout(tlTitleTimer);
+  let v = $('timeline-title').value.trim();
+  if (!v) { v = '新时间线'; $('timeline-title').value = v; }
+  await Nodes.update(timelineNode.id, { title: v });
+});
+
+$('timeline-title').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const first = document.querySelector('.tl-time');
+    if (first) first.focus();
+  }
+});
+
+/* ---- 顶栏：创建新事件 ---- */
+$('btn-new-event').addEventListener('click', async () => {
+  vibrate();
+  if (!timelineNode) return;
+  await addEvent(false);
+  toast('已添加事件');
+});
+
+/* ---- 返回章节列表 ---- */
+$('btn-back-timeline').addEventListener('click', async () => {
+  vibrate();
+  tlBusy = true;
+  try { await flushTimeline(); } finally { tlBusy = false; }
+  timelineNode = null;
+  state.chapterId = null;
+  showView('chapters');
+  await renderChapters();
+});
+</script>
+<script>
+/* ============================================================
+   视图 5：设定编辑器（分类列表）
+   每个分类 = 头部（分类名） + 下方内容区
+   字数统计只算所有分类的内容
+   ============================================================ */
+
+let settingNode = null;
+let setSaveTimer = null;
+let setTitleTimer = null;
+let setBusy = false;
+
+function newCategoryId() {
+  return 'cat-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+/** 只统计所有分类的「内容」字数，不含分类名 */
+function settingContentWords(node) {
+  let n = 0;
+  (node.categories || []).forEach((c) => { n += countWords(c.content || ''); });
+  return n;
+}
+
+async function openSetting(nodeId) {
+  if (settingNode && settingNode.id !== nodeId) {
+    setBusy = true;
+    try { await flushSetting(); } finally { setBusy = false; }
+  }
+  const node = await Nodes.get(nodeId);
+  if (!node) { toast('设定不存在'); return; }
+  if (!Array.isArray(node.categories)) node.categories = [];
+  settingNode = node;
+  state.chapterId = nodeId;
+
+  const kind = node.kind || 'character';
+  $('setting-title').value = node.title || '';
+  $('setting-title').placeholder = KIND_LABEL[kind] + '名称';
+  const tag = $('setting-kind-tag');
+  tag.textContent = KIND_ICON[kind] + ' ' + KIND_LABEL[kind] + '设定';
+
+  renderCategories();
+  updateSettingCount(settingContentWords(node), false);
+  showView('setting');
+}
+
+function updateSettingCount(n, pulse) {
+  const chip = $('setting-count');
+  chip.innerHTML = `<b>${n}</b><span>字</span>`;
+  if (pulse) {
+    chip.classList.remove('pulse');
+    void chip.offsetWidth;
+    chip.classList.add('pulse');
+  }
+}
+
+function renderCategories() {
+  const list = $('category-list');
+  list.innerHTML = '';
+  const cats = (settingNode && settingNode.categories) || [];
+
+  if (!cats.length) {
+    const empty = document.createElement('div');
+    empty.className = 'set-empty';
+    empty.innerHTML = '<span class="si">✿</span>还没有分类<br><span style="font-size:12px">点击右上角 ＋ 创建第一个分类</span>';
+    list.appendChild(empty);
+    return;
+  }
+
+  cats.forEach((cat, i) => {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.style.animationDelay = Math.min(i * 40, 320) + 'ms';
+
+    // ---- 头部：分类名 ----
+    const head = document.createElement('div');
+    head.className = 'cat-head';
+
+    const name = document.createElement('input');
+    name.className = 'cat-name';
+    name.type = 'text';
+    name.value = cat.name || '';
+    name.placeholder = '分类名称';
+    name.autocomplete = 'off';
+
+    const word = document.createElement('span');
+    word.className = 'cat-word';
+    word.textContent = countWords(cat.content || '') + ' 字';
+
+    const del = document.createElement('button');
+    del.className = 'cat-del';
+    del.type = 'button';
+    del.title = '删除分类';
+    del.textContent = '✕';
+
+    head.appendChild(name);
+    head.appendChild(word);
+    head.appendChild(del);
+
+    // ---- 内容区 ----
+    const body = document.createElement('textarea');
+    body.className = 'cat-body';
+    body.rows = 3;
+    body.value = cat.content || '';
+    body.placeholder = '在这里写「' + (cat.name || '本分类') + '」的内容……';
+    body.spellcheck = false;
+
+    const autosize = () => {
+      body.style.height = 'auto';
+      body.style.height = Math.max(76, body.scrollHeight) + 'px';
+    };
+
+    name.addEventListener('input', () => {
+      cat.name = name.value;
+      body.placeholder = '在这里写「' + (name.value.trim() || '本分类') + '」的内容……';
+      scheduleSettingSave();
+    });
+    name.addEventListener('blur', () => {
+      if (setBusy) return;
+      if (!name.value.trim()) {
+        name.value = '未命名分类';
+        cat.name = name.value;
+      }
+      setSaveNow();
+    });
+    name.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); body.focus(); }
+    });
+
+    body.addEventListener('input', () => {
+      cat.content = body.value;
+      const w = countWords(body.value);
+      word.textContent = w + ' 字';
+      autosize();
+      // 实时更新顶栏总字数
+      updateSettingCount(settingContentWords(settingNode), true);
+      scheduleSettingSave();
+    });
+    body.addEventListener('blur', () => {
+      if (setBusy) return;
+      setSaveNow();
+    });
+
+    del.addEventListener('click', () => {
+      vibrate();
+      const label = (cat.name || '').trim() || '本分类';
+      confirmDialog('删除分类', `确定删除「${label}」吗？该分类的内容会一并删除，无法恢复。`, async () => {
+        const idx = settingNode.categories.findIndex((c) => c.id === cat.id);
+        if (idx > -1) settingNode.categories.splice(idx, 1);
+        await setSaveNow();
+        renderCategories();
+        updateSettingCount(settingContentWords(settingNode), true);
+        toast('分类已删除');
+      });
+    });
+
+    card.appendChild(head);
+    card.appendChild(body);
+    list.appendChild(card);
+    autosize();
+  });
+
+  const hint = document.createElement('div');
+  hint.className = 'set-hint';
+  hint.textContent = '字数统计只计入各分类的内容';
+  list.appendChild(hint);
+}
+
+/** 顶栏「＋」创建分类 */
+function createCategoryDialog() {
+  if (!settingNode) return;
+  const kind = settingNode.kind || 'character';
+  promptDialog('创建分类', [
+    {
+      key: 'name',
+      label: '分类名称',
+      value: '',
+      placeholder: KIND_CAT_HINT[kind]
+    }
+  ], async (v) => {
+    const name = (v.name || '').trim();
+    if (!name) { toast('请输入分类名称'); return; }
+    settingNode.categories.push({ id: newCategoryId(), name, content: '' });
+    await setSaveNow();
+    renderCategories();
+    // 聚焦到新分类的内容区
+    const areas = document.querySelectorAll('.cat-body');
+    const target = areas[areas.length - 1];
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.focus();
+    }
+    toast('分类已创建');
+  }, '创建');
+}
+
+function scheduleSettingSave() {
+  clearTimeout(setSaveTimer);
+  setSaveTimer = setTimeout(setSaveNow, 600);
+}
+
+async function setSaveNow() {
+  if (!settingNode) return;
+  clearTimeout(setSaveTimer);
+  const target = settingNode.id;
+  const categories = settingNode.categories || [];
+  const words = settingContentWords({ categories });
+  const title = $('setting-title').value.trim() || ('新' + KIND_LABEL[settingNode.kind || 'character']);
+
+  // 分类名称为空的兜底
+  categories.forEach((c) => { if (!c.name || !c.name.trim()) c.name = '未命名分类'; });
+
+  const node = await Nodes.get(target);
+  if (!node) return;
+  await Nodes.update(target, { categories, wordCount: words, title });
+  if (settingNode && settingNode.id === target) settingNode.wordCount = words;
+  await Books.touch(node.bookId);
+  updateSettingCount(words, false);
+}
+
+/** 离开设定前落库 */
+async function flushSetting() {
+  if (!settingNode) return;
+  clearTimeout(setSaveTimer);
+  clearTimeout(setTitleTimer);
+  await setSaveNow();
+}
+
+/* ---- 标题防抖保存 ---- */
+$('setting-title').addEventListener('input', () => {
+  if (!settingNode) return;
+  const target = settingNode.id;
+  const val = $('setting-title').value;
+  clearTimeout(setTitleTimer);
+  setTitleTimer = setTimeout(async () => {
+    if (!settingNode || settingNode.id !== target) return;
+    const fallback = '新' + KIND_LABEL[settingNode.kind || 'character'];
+    await Nodes.update(target, { title: val.trim() || fallback });
+    const fresh = await Nodes.get(target);
+    if (fresh) await Books.touch(fresh.bookId);
+  }, 400);
+});
+
+$('setting-title').addEventListener('blur', async () => {
+  if (!settingNode || setBusy) return;
+  clearTimeout(setTitleTimer);
+  let v = $('setting-title').value.trim();
+  if (!v) { v = '新' + KIND_LABEL[settingNode.kind || 'character']; $('setting-title').value = v; }
+  await Nodes.update(settingNode.id, { title: v });
+});
+
+$('setting-title').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const first = document.querySelector('.cat-body');
+    if (first) first.focus();
+  }
+});
+
+/* ---- 顶栏：创建分类 ---- */
+$('btn-new-category').addEventListener('click', () => { vibrate(); createCategoryDialog(); });
+
+/* ---- 返回章节列表 ---- */
+$('btn-back-setting').addEventListener('click', async () => {
+  vibrate();
+  setBusy = true;
+  try { await flushSetting(); } finally { setBusy = false; }
+  settingNode = null;
+  state.chapterId = null;
+  showView('chapters');
+  await renderChapters();
+});
+</script>
+<script>
+/* ============================================================
+   导出：单个 Markdown 文件
+   两种范围：
+     full    —— 整本全部内容（章节 + 文件夹 + 设定 + 时间线 + 大纲）
+     basic   —— 只导出文件夹和章节两样
+   ============================================================ */
+
+/** 文件名净化 */
+function safeFileName(name) {
+  return String(name || '未命名')
+    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+    .replace(/^\s+|\s+$/g, '')
+    .slice(0, 80) || '未命名';
+}
+
+/** 时间戳 YYYYMMDD-HHmm */
+function stamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+/** 按节点树渲染（递归），返回 markdown 行数组 */
+function renderTree(bookId, parentId, all, opts, depth, lines) {
+  const kids = all
+    .filter((n) => (n.parentId || null) === (parentId || null))
+    .sort((a, b) => {
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+
+  for (const node of kids) {
+    if (node.type === 'folder') {
+      // 文件夹标题层级：从 ## 开始，每层递进，最深到 #####
+      const lvl = Math.min(2 + depth, 5);
+      lines.push('');
+      lines.push('#'.repeat(lvl) + ' ' + node.title);
+      lines.push('');
+      renderTree(bookId, node.id, all, opts, depth + 1, lines);
+
+    } else if (node.type === 'chapter') {
+      // 章节比同级文件夹深一级；嵌套过深时封顶，避免标题层级失控
+      const lvl = Math.min(depth === 0 ? 2 : depth + 2, 4);
+      lines.push('');
+      lines.push('#'.repeat(lvl) + ' ' + node.title);
+      lines.push('');
+      const body = (node.content || '').trim();
+      lines.push(body || '_（本章暂无内容）_');
+      lines.push('');
+
+    } else if (node.type === 'outline' && opts.includeExtras) {
+      lines.push('');
+      lines.push('#'.repeat(Math.min(depth === 0 ? 2 : depth + 2, 4)) + ' 🧭 ' + node.title + '（故事大纲）');
+      lines.push('');
+      lines.push((node.content || '').trim() || '_（暂无内容）_');
+      lines.push('');
+
+    } else if (node.type === 'timeline' && opts.includeExtras) {
+      lines.push('');
+      lines.push('#'.repeat(Math.min(depth === 0 ? 2 : depth + 2, 4)) + ' 🕰 ' + node.title + '（时间线）');
+      lines.push('');
+      const evs = node.events || [];
+      if (!evs.length) {
+        lines.push('_（暂无事件）_');
+      } else {
+        evs.forEach((ev) => {
+          const t = (ev.time || '').trim() || '—';
+          const x = (ev.text || '').trim() || '';
+          lines.push(`- **${t}**　${x}`);
+        });
+      }
+      lines.push('');
+
+    } else if (node.type === 'setting' && opts.includeExtras) {
+      const kind = KIND_LABEL[node.kind || 'character'];
+      lines.push('');
+      lines.push('#'.repeat(Math.min(depth === 0 ? 2 : depth + 2, 4)) + ' ' +
+        KIND_ICON[node.kind || 'character'] + ' ' + node.title + '（' + kind + '设定）');
+      lines.push('');
+      const cats = node.categories || [];
+      if (!cats.length) {
+        lines.push('_（暂无分类）_');
+      } else {
+        cats.forEach((c) => {
+          // 分类名固定为 H5，稳在设定标题之下
+          lines.push('##### ' + (c.name || '未命名分类'));
+          lines.push('');
+          lines.push((c.content || '').trim() || '_（暂无内容）_');
+          lines.push('');
+        });
+      }
+      lines.push('');
+    }
+  }
+  return lines;
+}
+
+/** 生成整本 markdown */
+function buildMarkdown(book, all, opts) {
+  const lines = [];
+  const now = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+
+  lines.push('# ' + book.title);
+  lines.push('');
+  if (book.intro) {
+    lines.push('> ' + book.intro.replace(/\n/g, '\n> '));
+    lines.push('');
+  }
+
+  // 统计
+  const chapters = all.filter((n) => n.type === 'chapter');
+  const words = chapters.reduce((s, n) => s + (n.wordCount || 0), 0);
+  const meta = [`共 ${chapters.length} 章`, `${words} 字`];
+  if (opts.includeExtras) {
+    const st = all.filter((n) => n.type === 'setting').length;
+    const tl = all.filter((n) => n.type === 'timeline').length;
+    const ol = all.filter((n) => n.type === 'outline').length;
+    if (st) meta.push(`${st} 条设定`);
+    if (tl) meta.push(`${tl} 条时间线`);
+    if (ol) meta.push(`${ol} 份大纲`);
+  }
+  lines.push('*' + meta.join(' · ') + '*');
+  lines.push('');
+  lines.push(`*导出时间：${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}*`);
+  lines.push('');
+  lines.push('---');
+
+  renderTree(book.id, null, all, opts, 0, lines);
+
+  // 收尾：折叠多余空行
+  let out = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  return out;
+}
+
+/** 选择导出范围 */
+function exportDialog(book) {
+  Modal.open({
+    title: '导出为 Markdown',
+    desc: `《${book.title}》导出为单个 .md 文件`,
+    choices: [
+      {
+        icon: '📚', label: '导出整本全部内容',
+        hint: '章节 + 文件夹 + 设定 + 时间线 + 大纲',
+        onClick: () => doExport(book, { includeExtras: true })
+      },
+      {
+        icon: '📄', label: '只导出文件夹和章节',
+        hint: '不含设定、时间线、故事大纲',
+        onClick: () => doExport(book, { includeExtras: false })
+      }
+    ],
+    actions: [{ label: '取消', kind: 'ghost' }]
+  });
+}
+
+/** 执行导出（浏览器下载） */
+async function doExport(book, opts) {
+  try {
+    const all = await Nodes.byBook(book.id);
+    if (!all.length) { toast('这本书还是空的'); return; }
+
+    const md = buildMarkdown(book, all, opts);
+    const filename = safeFileName(book.title) + (opts.includeExtras ? '' : '-章节') + '-' + stamp() + '.md';
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+
+    // APK 环境优先走原生桥（写到系统「下载」目录）
+    if (typeof saveBlobNative === 'function' && saveBlobNative(blob, filename)) {
+      toast(`已导出 ${filename}`);
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+    toast(`已导出 ${filename}`);
+  } catch (e) {
+    console.error(e);
+    toast('导出失败：' + e.message);
+  }
+}
+</script>
+<script>
+/* ============================================================
+   JSON 导出 / 导入 —— 整本书完整备份
+   用于备份，或把书搬到其他设备 / 其他浏览器
+   ============================================================ */
+
+const BACKUP_FORMAT = 'lavender-novel-book';
+const BACKUP_VERSION = 1;
+
+/* ---------------- 导出 ---------------- */
+
+/** 导出整本书为 JSON 文件 */
+async function exportJson(book) {
+  try {
+    const nodes = await Nodes.byBook(book.id);
+    const payload = {
+      format: BACKUP_FORMAT,
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      book: {
+        title: book.title,
+        intro: book.intro || '',
+        createdAt: book.createdAt || null,
+        updatedAt: book.updatedAt || null
+      },
+      // 保留原始 id，便于导入时还原层级
+      nodes
+    };
+
+    const json = JSON.stringify(payload, null, 2);
+    const filename = safeFileName(book.title) + '-' + stamp() + '.json';
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+
+    const chapters = nodes.filter((n) => n.type === 'chapter').length;
+
+    // APK 环境优先走原生桥（写到系统「下载」目录）
+    if (typeof saveBlobNative === 'function' && saveBlobNative(blob, filename)) {
+      toast(`已导出 ${filename}（${chapters} 章）`);
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+    toast(`已导出 ${filename}（${chapters} 章）`);
+  } catch (e) {
+    console.error(e);
+    toast('导出失败：' + e.message);
+  }
+}
+
+/* ---------------- 导入 ---------------- */
+
+/** 触发文件选择 */
+function pickJsonFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.style.display = 'none';
+  input.addEventListener('change', async () => {
+    const file = input.files && input.files[0];
+    if (file) await handleJsonFile(file);
+    document.body.removeChild(input);
+  });
+  document.body.appendChild(input);
+  input.click();
+}
+
+/** 校验并预览，再确认导入 */
+async function handleJsonFile(file) {
+  let payload;
+  try {
+    const text = await file.text();
+    payload = JSON.parse(text);
+  } catch (e) {
+    confirmDialog('无法读取文件', '这个文件不是有效的 JSON，可能已损坏。', null, '知道了');
+    return;
+  }
+
+  const err = validateBackup(payload);
+  if (err) {
+    confirmDialog('备份文件无效', err, null, '知道了');
+    return;
+  }
+
+  const nodes = payload.nodes || [];
+  const chapters = nodes.filter((n) => n.type === 'chapter').length;
+  const folders = nodes.filter((n) => n.type === 'folder').length;
+  const settings = nodes.filter((n) => n.type === 'setting').length;
+  const timelines = nodes.filter((n) => n.type === 'timeline').length;
+  const outlines = nodes.filter((n) => n.type === 'outline').length;
+  const words = nodes
+    .filter((n) => n.type === 'chapter')
+    .reduce((s, n) => s + (n.wordCount || 0), 0);
+
+  const bits = [`${chapters} 章`, `${words} 字`];
+  if (folders) bits.push(`${folders} 个文件夹`);
+  if (settings) bits.push(`${settings} 条设定`);
+  if (timelines) bits.push(`${timelines} 条时间线`);
+  if (outlines) bits.push(`${outlines} 份大纲`);
+
+  const bookTitle = (payload.book && payload.book.title) || '未命名';
+  Modal.open({
+    title: '导入书本',
+    desc: `《${bookTitle}》\n${bits.join(' · ')}\n\n导入后会作为一本新书加入书阁，原有书本不受影响。`,
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      {
+        label: '导入', kind: 'primary',
+        onClick: () => doImport(payload)
+      }
+    ]
+  });
+}
+
+/** 按实际内容重算整本书的字数（导入后调用，不信任文件里的旧值） */
+async function recountBook(bookId) {
+  const nodes = await Nodes.byBook(bookId);
+  await tx('nodes', 'readwrite', (s) => {
+    nodes.forEach((n) => {
+      let words = null;
+      if (n.type === 'chapter' || n.type === 'outline') {
+        words = countWords(n.content || '');
+      } else if (n.type === 'setting') {
+        words = 0;
+        (n.categories || []).forEach((c) => { words += countWords(c.content || ''); });
+      } else if (n.type === 'timeline') {
+        words = 0;
+        (n.events || []).forEach((e) => { words += countWords(e.text || ''); });
+      } else if (n.type === 'folder') {
+        words = 0;
+      }
+      if (words !== null && words !== n.wordCount) {
+        n.wordCount = words;
+        s.put(n);
+      }
+    });
+    return null;
+  });
+}
+
+/** 校验备份结构，返回错误说明或 null */
+function validateBackup(payload) {
+  if (!payload || typeof payload !== 'object') return '文件内容为空或格式不对。';
+  if (payload.format !== BACKUP_FORMAT) {
+    return '这不是本编辑器导出的书本备份文件。';
+  }
+  if (payload.version > BACKUP_VERSION) {
+    return `备份版本（v${payload.version}）比当前应用更新，请升级后再导入。`;
+  }
+  if (!payload.book || typeof payload.book.title !== 'string') {
+    return '备份里缺少书本信息。';
+  }
+  if (!Array.isArray(payload.nodes)) {
+    return '备份里缺少内容节点。';
+  }
+  return null;
+}
+
+/** 执行导入：id 全部重映射，避免与现有数据冲突 */
+async function doImport(payload) {
+  try {
+    const src = payload.nodes || [];
+    const validTypes = new Set(['folder', 'chapter', 'setting', 'timeline', 'outline']);
+
+    // 1) 新建书本
+    const book = await Books.add(
+      payload.book.title + (payload.book.title ? '（导入）' : '未命名（导入）'),
+      payload.book.intro || ''
+    );
+
+    // 2) 建立 旧id -> 新id 映射
+    const idMap = {};
+    src.forEach((n) => {
+      if (n && n.id) idMap[n.id] = uid('n');
+    });
+
+    // 3) 逐个写入，parentId 一并重映射
+    const now = Date.now();
+    let count = 0;
+    for (const n of src) {
+      if (!n || !n.id) continue;
+      const type = validTypes.has(n.type) ? n.type : 'chapter';
+      const node = {
+        id: idMap[n.id],
+        bookId: book.id,
+        parentId: (n.parentId && idMap[n.parentId]) ? idMap[n.parentId] : null,
+        type,
+        title: typeof n.title === 'string' && n.title ? n.title : '未命名',
+        createdAt: n.createdAt || now,
+        updatedAt: n.updatedAt || now
+      };
+
+      if (type === 'folder') {
+        node.content = '';
+        node.wordCount = 0;
+      } else if (type === 'chapter' || type === 'outline') {
+        node.content = typeof n.content === 'string' ? n.content : '';
+        node.wordCount = n.wordCount || 0;
+      } else if (type === 'setting') {
+        node.kind = ['character', 'place', 'world'].includes(n.kind) ? n.kind : 'character';
+        node.categories = Array.isArray(n.categories)
+          ? n.categories.map((c) => ({
+              id: c && c.id ? c.id : uid('cat'),
+              name: (c && c.name) || '未命名分类',
+              content: (c && c.content) || ''
+            }))
+          : [];
+        node.wordCount = n.wordCount || 0;
+      } else if (type === 'timeline') {
+        node.events = Array.isArray(n.events)
+          ? n.events.map((e) => ({
+              id: e && e.id ? e.id : uid('ev'),
+              time: (e && e.time) || '',
+              text: (e && e.text) || ''
+            }))
+          : [];
+        node.wordCount = n.wordCount || 0;
+      }
+
+      await Nodes.putRaw(node);
+      count++;
+    }
+
+    // 4) 悬空 parentId 兜底：父节点不存在则挂到根目录
+    await Nodes.repairOrphans(book.id);
+
+    // 5) 重算字数：不信任备份里的旧值，按实际内容重新统计
+    await recountBook(book.id);
+
+    await Books.touch(book.id);
+    await renderBooks();
+    toast(`已导入《${book.title}》，共 ${count} 项`);
+  } catch (e) {
+    console.error(e);
+    toast('导入失败：' + e.message);
+  }
+}
+
+$('btn-import-json').addEventListener('click', () => {
+  vibrate();
+  Modal.open({
+    title: '导入书本 JSON',
+    desc: '选择之前导出的 .json 备份文件。导入后会作为一本新书加入书阁，不会覆盖现有书本。',
+    actions: [
+      { label: '取消', kind: 'ghost' },
+      { label: '选择文件', kind: 'primary', onClick: () => setTimeout(pickJsonFile, 120) }
+    ]
+  });
+});
+</script>
+<script>
+/* ============================================================
+   全局搜索（书本内）
+   模式：
+     name —— 只命中文件名
+     full —— 命中文件名 + 正文内容
+   ============================================================ */
+
+let searchMode = 'name';
+let searchBookId = null;
+let searchTimer = null;
+let searchNodes = [];
+
+/** 取节点的可搜索正文（按类型展开） */
+function nodeSearchText(node) {
+  switch (node.type) {
+    case 'chapter':
+    case 'outline':
+      return node.content || '';
+    case 'setting': {
+      const parts = [];
+      (node.categories || []).forEach((c) => {
+        parts.push(c.name || '');
+        parts.push(c.content || '');
+      });
+      return parts.join('\n');
+    }
+    case 'timeline': {
+      const parts = [];
+      (node.events || []).forEach((e) => {
+        parts.push(e.time || '');
+        parts.push(e.text || '');
+      });
+      return parts.join('\n');
+    }
+    default:
+      return '';
+  }
+}
+
+/** 转义正则特殊字符 */
+function reEscape(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** 高亮命中片段（HTML 已转义后再插标记） */
+function highlight(text, query) {
+  const safe = esc(text);
+  if (!query) return safe;
+  const re = new RegExp('(' + reEscape(esc(query)) + ')', 'gi');
+  return safe.replace(re, '<span class="hit">$1</span>');
+}
+
+/** 节点类型中文名 */
+function shortTypeLabel(node) {
+  return typeLabel(node);
+}
+
+/** 计算某节点在树中的路径，如「第一卷 / 第一章组」 */
+function nodePath(node, all) {
+  const parts = [];
+  let cur = node;
+  const guard = new Set();
+  while (cur && cur.parentId && !guard.has(cur.parentId)) {
+    guard.add(cur.parentId);
+    const p = all.find((n) => n.id === cur.parentId);
+    if (!p) break;
+    parts.unshift(p.title);
+    cur = p;
+  }
+  return parts.length ? parts.join(' / ') : '根目录';
+}
+
+/** 截取命中附近的文本片段 */
+function makeSnippet(text, query, radius) {
+  const t = String(text || '');
+  const q = String(query || '');
+  if (!t) return '';
+  const lower = t.toLowerCase();
+  const idx = lower.indexOf(q.toLowerCase());
+  const r = radius || 42;
+  if (idx < 0) return t.slice(0, r * 2);
+  const start = Math.max(0, idx - r);
+  const end = Math.min(t.length, idx + q.length + r);
+  return (start > 0 ? '…' : '') + t.slice(start, end).replace(/\s+/g, ' ') + (end < t.length ? '…' : '');
+}
+
+/* ---------------- 打开 / 关闭 ---------------- */
+
+async function openSearch() {
+  searchBookId = state.bookId;
+  if (!searchBookId) return;
+  searchNodes = await Nodes.byBook(searchBookId);
+  const book = await Books.get(searchBookId);
+  $('search-input').placeholder = `在《${book ? book.title : ''}》中搜索…`;
+  showView('search');
+  setTimeout(() => $('search-input').focus(), 160);
+  renderSearchResults();
+}
+
+function closeSearch() {
+  $('search-input').value = '';
+  $('search-status').textContent = '';
+  showView('chapters');
+  renderChapters();
+}
+
+function setSearchMode(mode) {
+  searchMode = mode;
+  document.querySelectorAll('.mode-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  renderSearchResults();
+  $('search-input').focus();
+}
+
+/* ---------------- 匹配 ---------------- */
+
+/** 对单个节点做匹配，返回 { node, nameHit, textHit, snippet } 或 null */
+function matchNode(node, query) {
+  const nameHit = (node.title || '').toLowerCase().includes(query);
+  if (searchMode === 'name') {
+    return nameHit ? { node, nameHit: true, textHit: false, snippet: '' } : null;
+  }
+  // 全文模式
+  const text = nodeSearchText(node);
+  const textHit = text.toLowerCase().includes(query);
+  if (!nameHit && !textHit) return null;
+  return {
+    node,
+    nameHit,
+    textHit,
+    snippet: textHit ? makeSnippet(text, query) : ''
+  };
+}
+
+/** 排序：文件名命中优先，其次类型权重，再按更新时间 */
+function resultWeight(r) {
+  let w = 0;
+  if (r.nameHit) w -= 100;
+  if (r.node.type === 'folder') w -= 20;
+  if (r.node.type === 'chapter') w -= 10;
+  return w;
+}
+
+/* ---------------- 渲染 ---------------- */
+
+function renderSearchResults() {
+  const raw = $('search-input').value || '';
+  const query = raw.trim().toLowerCase();
+  const list = $('search-results');
+  const status = $('search-status');
+  list.innerHTML = '';
+
+  $('btn-clear-search').hidden = !raw;
+
+  if (!query) {
+    status.textContent = '';
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.innerHTML = `<span class="se-icon">🔍</span>
+      ${searchMode === 'name'
+        ? '输入关键词，搜索文件夹与各类文件名'
+        : '输入关键词，搜索文件名与正文内容'}<br>
+      <span style="font-size:12px;opacity:.75">当前模式：${searchMode === 'name' ? '文件名搜索' : '全文搜索'}</span>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  const results = [];
+  for (const node of searchNodes) {
+    const r = matchNode(node, query);
+    if (r) results.push(r);
+  }
+  results.sort((a, b) => {
+    const d = resultWeight(a) - resultWeight(b);
+    return d !== 0 ? d : (b.node.updatedAt || 0) - (a.node.updatedAt || 0);
+  });
+
+  status.textContent = results.length
+    ? `找到 ${results.length} 项 · ${searchMode === 'name' ? '文件名搜索' : '全文搜索'}`
+    : '';
+
+  if (!results.length) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.innerHTML = `<span class="se-icon">✿</span>
+      没有找到「${esc(raw.trim())}」<br>
+      <span style="font-size:12px;opacity:.75">${searchMode === 'name'
+        ? '试试切换到「全文搜索」，连正文一起找'
+        : '换个关键词试试'}</span>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  results.forEach((r, i) => {
+    const node = r.node;
+    const row = document.createElement('div');
+    row.className = 'sr-row';
+    row.style.animationDelay = Math.min(i * 28, 300) + 'ms';
+
+    const path = nodePath(node, searchNodes);
+    let tail = '';
+    if (node.type === 'folder') {
+      const st = Nodes.folderWordCount(node.id, searchNodes);
+      const bits = [];
+      if (st.chapters) bits.push(`${st.chapters} 章`);
+      if (st.settings) bits.push(`${st.settings} 设定`);
+      if (st.others) bits.push(`${st.others} 资料`);
+      tail = bits.length ? bits.join(' · ') : '空';
+    } else if (node.type === 'timeline') {
+      tail = `${(node.events || []).length} 事件`;
+    } else {
+      tail = `${node.wordCount || 0} 字`;
+    }
+
+    // 名字命中高亮
+    const nameHtml = r.nameHit ? highlight(node.title, raw.trim()) : esc(node.title);
+
+    // 全文模式下正文命中的片段
+    let snippetHtml = '';
+    if (searchMode === 'full' && r.textHit && r.snippet) {
+      snippetHtml = `<div class="sr-snippet">${highlight(r.snippet, raw.trim())}</div>`;
+    }
+
+    const badge = (searchMode === 'full' && r.textHit && !r.nameHit)
+      ? '<span class="sr-badge">正文命中</span>'
+      : (searchMode === 'full' && r.nameHit ? '<span class="sr-badge name-only">文件名命中</span>' : '');
+
+    row.innerHTML = `
+      <span class="sr-icon">${nodeIcon(node)}</span>
+      <span class="sr-main">
+        <span class="sr-name">${nameHtml}</span>
+        <span class="sr-path">${esc(shortTypeLabel(node))} · ${esc(path)}</span>
+        ${snippetHtml}
+        ${badge}
+      </span>
+      <span class="sr-tail">${esc(tail)}</span>`;
+
+    row.addEventListener('click', () => openSearchResult(node));
+    list.appendChild(row);
+  });
+}
+
+/** 点击结果：章节/大纲/设定打开编辑器；文件夹进入该目录 */
+async function openSearchResult(node) {
+  if (node.type === 'folder') {
+    state.folderId = node.id;
+    $('search-input').value = '';
+    showView('chapters');
+    await renderChapters();
+    return;
+  }
+  $('search-input').value = '';
+  showView('chapters');   // 先回章节视图，编辑器/时间线会再切
+  if (node.type === 'timeline') {
+    await openTimeline(node.id);
+  } else if (node.type === 'setting') {
+    await openSetting(node.id);
+  } else {
+    await openChapter(node.id);
+  }
+}
+
+/* ---------------- 事件绑定 ---------------- */
+
+$('search-input').addEventListener('input', () => {
+  $('btn-clear-search').hidden = !$('search-input').value;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(renderSearchResults, 180);
+});
+
+$('search-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    clearTimeout(searchTimer);
+    renderSearchResults();
+    const first = document.querySelector('.sr-row');
+    if (first) first.click();
+  }
+});
+
+$('mode-name').addEventListener('click', () => { vibrate(); setSearchMode('name'); });
+$('mode-full').addEventListener('click', () => { vibrate(); setSearchMode('full'); });
+
+$('btn-clear-search').addEventListener('click', () => {
+  $('search-input').value = '';
+  $('btn-clear-search').hidden = true;
+  renderSearchResults();
+  $('search-input').focus();
+});
+
+$('btn-back-search').addEventListener('click', () => { vibrate(); closeSearch(); });
+</script>
+<script>
+/* ============================================================
+   IndexedDB 容量显示
+   左：进度条   右：已用 / 上限
+   条最右：容量切换按钮 → 8 档可选
+   ============================================================ */
+
+const CAPACITY_KEY = 'capacityLimit';
+const DEFAULT_CAPACITY = 128 * 1024 * 1024;   // 128 MB
+
+/** 可选容量档位 */
+const CAPACITY_OPTIONS = [
+  { label: '16 MB',  bytes: 16  * 1024 * 1024 },
+  { label: '64 MB',  bytes: 64  * 1024 * 1024 },
+  { label: '128 MB', bytes: 128 * 1024 * 1024, note: '默认' },
+  { label: '256 MB', bytes: 256 * 1024 * 1024 },
+  { label: '512 MB', bytes: 512 * 1024 * 1024 },
+  { label: '1 GB',   bytes: 1024 * 1024 * 1024 },
+  { label: '2 GB',   bytes: 2 * 1024 * 1024 * 1024 },
+  { label: '4 GB',   bytes: 4 * 1024 * 1024 * 1024 }
+];
+
+let capacityLimit = DEFAULT_CAPACITY;
+
+/** 人类可读体积 */
+function fmtBytes(n) {
+  if (!n || n < 0) n = 0;
+  const KB = 1024, MB = KB * 1024, GB = MB * 1024;
+  if (n < KB) return n + ' B';
+  if (n < MB) return (n / KB).toFixed(n / KB < 10 ? 1 : 0) + ' KB';
+  if (n < GB) {
+    const v = n / MB;
+    return (v < 10 ? v.toFixed(1) : Math.round(v)) + ' MB';
+  }
+  const v = n / GB;
+  return (v < 10 ? v.toFixed(2) : v.toFixed(1)) + ' GB';
+}
+
+/** 估算本应用的 IndexedDB 已用空间（字节） */
+async function estimateUsage() {
+  // 优先用浏览器配额 API
+  if (navigator.storage && navigator.storage.estimate) {
+    try {
+      const est = await navigator.storage.estimate();
+      if (est && typeof est.usage === 'number') return est.usage;
+    } catch (e) { /* 退回到自行统计 */ }
+  }
+  return measureOwnUsage();
+}
+
+/** 自行统计：把所有书本与节点的数据编码后量长度 */
+async function measureOwnUsage() {
+  let total = 0;
+  try {
+    const books = await Books.all();
+    total += JSON.stringify(books).length;
+    for (const b of books) {
+      const nodes = await Nodes.byBook(b.id);
+      total += JSON.stringify(nodes).length;
+    }
+  } catch (e) { /* ignore */ }
+  // UTF-8 中文按 3 字节估算：粗略乘以 1.6 贴近实际
+  return Math.round(total * 1.6);
+}
+
+/** 刷新容量条 */
+async function refreshStorage() {
+  try {
+    const used = await estimateUsage();
+    capacityLimit = await Settings.get(CAPACITY_KEY, DEFAULT_CAPACITY);
+    if (typeof capacityLimit !== 'number' || capacityLimit <= 0) capacityLimit = DEFAULT_CAPACITY;
+
+    const pct = Math.min(100, capacityLimit ? (used / capacityLimit) * 100 : 0);
+    const fill = $('sb-fill');
+    const text = $('sb-text');
+
+    fill.style.width = pct.toFixed(2) + '%';
+
+    const level = pct >= 90 ? 'danger' : pct >= 70 ? 'warn' : '';
+    fill.classList.remove('warn', 'danger');
+    text.classList.remove('warn', 'danger');
+    if (level) { fill.classList.add(level); text.classList.add(level); }
+
+    text.innerHTML = `<b>${fmtBytes(used)}</b> / ${fmtBytes(capacityLimit)}`;
+    $('sb-track').title = `已用 ${fmtBytes(used)} · 上限 ${fmtBytes(capacityLimit)}（${pct.toFixed(1)}%）`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/** 打开容量选择 */
+async function openCapacityDialog() {
+  const current = await Settings.get(CAPACITY_KEY, DEFAULT_CAPACITY);
+
+  Modal.open({
+    title: '存储容量上限',
+    desc: '用于容量条显示与用量提醒。修改后立即生效。',
+    fields: [{
+      key: '__cap',
+      label: '',
+      type: 'custom',
+      render: (wrap) => {
+        const list = document.createElement('div');
+        list.className = 'cap-list';
+        CAPACITY_OPTIONS.forEach((opt) => {
+          const isCur = opt.bytes === current;
+          const item = document.createElement('button');
+          item.className = 'cap-item' + (isCur ? ' current' : '');
+          item.type = 'button';
+          item.innerHTML = `<span class="cap-val">${opt.label}</span>
+            ${opt.note ? `<span class="cap-note">${opt.note}</span>` : ''}
+            <span class="cap-check" ${isCur ? '' : 'hidden'}>✓</span>`;
+          item.addEventListener('click', async () => {
+            vibrate();
+            Modal.close();
+            await Settings.set(CAPACITY_KEY, opt.bytes);
+            capacityLimit = opt.bytes;
+            await refreshStorage();
+            toast(`容量上限已设为 ${opt.label}`);
+          });
+          list.appendChild(item);
+        });
+        wrap.appendChild(list);
+      }
+    }],
+    actions: [{ label: '取消', kind: 'ghost' }]
+  });
+}
+
+$('sb-cap-btn').addEventListener('click', () => { vibrate(); openCapacityDialog(); });
+
+// 页面可见性变化时刷新（其他标签页写入后回来能同步）
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshStorage();
+});
+</script>
+<script>
+/* ============================================================
+   APK 集成层
+   - 处理 Android 返回键：按视图层级逐级后退
+   - 通知原生层当前状态（可选）
+   在浏览器中打开时这些函数为无害的空操作。
+   ============================================================ */
+
+/**
+ * Android 返回键入口。
+ * 返回 true  —— 已在页面内处理（不要退出应用）
+ * 返回 false —— 无上层视图，允许系统退出
+ */
+function handleAndroidBack() {
+  const active = document.querySelector('.view.active');
+  const id = active ? active.id : '';
+
+  // 正在弹悬浮窗 / 长按菜单：先关掉
+  if (!$('modal-overlay').hidden) { Modal.close(); return true; }
+  if (!$('sheet-overlay').hidden) { Sheet.close(); return true; }
+
+  switch (id) {
+    case 'view-editor':
+      // 编辑器 -> 章节列表（先落库）
+      $('btn-back-chapters').click();
+      return true;
+    case 'view-timeline':
+      $('btn-back-timeline').click();
+      return true;
+    case 'view-setting':
+      $('btn-back-setting').click();
+      return true;
+    case 'view-search':
+      $('btn-back-search').click();
+      return true;
+    case 'view-chapters':
+      // 章节列表：若在子目录则回上级，否则回书阁
+      if (state.folderId) {
+        const cur = (state.nodesCache || []).find((n) => n.id === state.folderId);
+        state.folderId = (cur && cur.parentId) ? cur.parentId : null;
+        renderChapters();
+      } else {
+        $('btn-back-books').click();
+      }
+      return true;
+    case 'view-books':
+    default:
+      // 已在首页 —— 允许退出
+      return false;
+  }
+}
+
+/* ---------- 导出：在 APK 中通过原生桥写文件 ---------- */
+
+/**
+ * 判断是否运行在 APK 容器里
+ */
+function isNativeShell() {
+  return typeof window.AndroidBridge !== 'undefined' && window.AndroidBridge !== null;
+}
+
+/**
+ * 把 Blob 交给原生层保存到「下载」目录。
+ * 浏览器环境返回 false，由调用方走 <a download> 兜底。
+ */
+function saveBlobNative(blob, filename) {
+  if (!isNativeShell() || !blob) return false;
+  try {
+    const fr = new FileReader();
+    fr.onloadend = function () {
+      const s = fr.result || '';
+      const i = String(s).indexOf(',');
+      if (i > 0) {
+        window.AndroidBridge.saveBase64(String(s).substring(i + 1), filename, blob.type || '');
+      }
+    };
+    fr.readAsDataURL(blob);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+</script>
+<script>
+/* ============================================================
+   PWA 集成层
+   - 检测是否运行于 Fennec F-Droid（或 Firefox for Android）
+   - 仅在该浏览器下弹出「持久存储」授权确认
+   - 注册内联 Service Worker（单文件，无外部资源）
+   - 注入 data: URI 的 web app manifest
+   ============================================================ */
+
+/* 图标（PNG base64 data URI）—— 由构建脚本注入 */
+const PWA_ICONS = window.__PWA_ICONS__ || {};
+
+const PWA = (() => {
+
+  /** 当前 UA 信息 */
+  function uaInfo() {
+    const ua = navigator.userAgent || '';
+    const isFirefox = /firefox|fxios/i.test(ua);
+    const isAndroid = /android/i.test(ua);
+    // Firefox for Android 的 UA 形如:
+    //   Mozilla/5.0 (Android 10; Mobile; rv:130.0) Gecko/130.0 Firefox/130.0
+    // Fennec F-Droid 使用同一内核与 UA，无法从 UA 区分 F-Droid 版与商店版，
+    // 因此按「Firefox on Android」处理（这正是 Fennec 的运行环境）。
+    const isFennec = isFirefox && isAndroid;
+    return { ua, isFirefox, isAndroid, isFennec };
+  }
+
+  /** 是否已获得持久存储 */
+  async function isPersisted() {
+    try {
+      if (navigator.storage && navigator.storage.persisted) {
+        return await navigator.storage.persisted();
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /** 申请持久存储 */
+  async function requestPersist() {
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        return await navigator.storage.persist();
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /** 估算可用空间（供说明文案用） */
+  async function quotaInfo() {
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        const e = await navigator.storage.estimate();
+        return { usage: e.usage || 0, quota: e.quota || 0 };
+      }
+    } catch (e) {}
+    return { usage: 0, quota: 0 };
+  }
+
+  function fmtBytes(n) {
+    if (!n) return '未知';
+    const KB = 1024, MB = KB * 1024, GB = MB * 1024;
+    if (n < MB) return (n / KB).toFixed(1) + ' KB';
+    if (n < GB) return (n / MB).toFixed(0) + ' MB';
+    return (n / GB).toFixed(1) + ' GB';
+  }
+
+  /**
+   * Fennec 下弹窗申请持久存储。
+   * 用户点「允许」才真正调用 persist()；否则不打扰。
+   */
+  async function maybeAskPersist() {
+    const info = uaInfo();
+    if (!info.isFennec) return;                 // 非 Fennec：不申请
+
+    const already = await isPersisted();
+    const q = await quotaInfo();
+
+    // 已经持久化过就不再打扰（除非容量快满，提示一次）
+    if (already) {
+      if (q.quota && q.usage / q.quota > 0.8) {
+        toast('存储空间已用 ' + (q.usage / q.quota * 100).toFixed(0) + '%');
+      }
+      return;
+    }
+
+    Modal.open({
+      title: '申请持久存储',
+      desc: '检测到你在 Fennec F-Droid 中打开本应用。\n\n' +
+            '浏览器默认可能在空间紧张时自动清理网站数据。授权「持久存储」后，' +
+            '你的小说会被保留，直到你主动清除数据。\n\n' +
+            (q.quota ? '当前可用配额约 ' + fmtBytes(q.quota) + '。' : ''),
+      choices: [
+        {
+          icon: '🔒', label: '允许持久存储', hint: '推荐 · 数据更安全',
+          onClick: async () => {
+            const ok = await requestPersist();
+            if (ok) {
+              toast('已获得持久存储授权');
+            } else {
+              // Firefox 可能不弹窗而直接拒绝，引导手动设置
+              Modal.open({
+                title: '未能自动授权',
+                desc: '浏览器没有授予持久存储。你可以在浏览器中手动开启：\n\n' +
+                      '地址栏左侧的锁形图标 → 权限 → 「持久存储」设为「允许」，然后刷新页面。',
+                actions: [{ label: '知道了', kind: 'primary' }]
+              });
+            }
+          }
+        },
+        {
+          icon: '⏳', label: '暂不申请', hint: '下次打开会再问一次',
+          onClick: () => { /* 什么都不做 */ }
+        }
+      ],
+      actions: [{ label: '关闭', kind: 'ghost' }]
+    });
+  }
+
+  /**
+   * 注册 Service Worker（离线可用 + 可安装）。
+   *
+   * 注意：Service Worker 脚本必须是「同源的 http(s) 文件」，
+   * 不能用 blob: / data: URI（浏览器返回 TypeError）。
+   * 本应用是单文件交付，没有独立 .js 可放，因此：
+   *   - 若页面目录下存在 lavender-sw.js（用户额外放置），则注册它；
+   *   - 否则跳过注册，应用功能不受影响（数据仍由 IndexedDB 持久保存，
+   *     manifest 仍可让浏览器「添加到主屏幕」）。
+   */
+  async function registerSW() {
+    if (!('serviceWorker' in navigator)) return null;
+    if (!/^https?:$/.test(location.protocol)) return null;
+
+    // 探测同目录下是否有可用的 SW 文件
+    const candidates = ['lavender-sw.js', './lavender-sw.js'];
+    for (const path of candidates) {
+      try {
+        const res = await fetch(path, { method: 'GET', cache: 'no-store' });
+        if (!res.ok) continue;
+        const txt = await res.text();
+        if (!/addEventListener/.test(txt)) continue;   // 不是 SW 脚本
+        const reg = await navigator.serviceWorker.register(path, { scope: './' });
+        console.log('Service Worker 已注册：' + path);
+        return reg;
+      } catch (e) {
+        // 继续尝试下一个
+      }
+    }
+    // 单文件模式下没有 SW 文件，属正常情况
+    console.log('未找到可注册的 Service Worker 文件（单文件模式，功能不受影响）');
+    return null;
+  }
+
+  /** 注入 web app manifest（data URI，无需额外文件） */
+  function injectManifest(icons) {
+    try {
+      const manifest = {
+        name: '薰小说编辑器',
+        short_name: '薰小说',
+        description: '薰衣草夜主题的离线小说写作工具',
+        start_url: './',
+        scope: './',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#17102A',
+        theme_color: '#17102A',
+        lang: 'zh-CN',
+        dir: 'ltr',
+        icons: [
+          { src: icons.icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: icons.icon512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: icons.maskable512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        ]
+      };
+      const json = JSON.stringify(manifest);
+      // 用 base64 承载，避免 URI 转义问题
+      const b64 = btoa(unescape(encodeURIComponent(json)));
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = 'data:application/manifest+json;base64,' + b64;
+      document.head.appendChild(link);
+
+      // 图标（favicon / apple-touch-icon）
+      const mk = (rel, href) => {
+        const l = document.createElement('link');
+        l.rel = rel; l.href = href;
+        if (rel === 'apple-touch-icon') l.sizes = '192x192';
+        document.head.appendChild(l);
+      };
+      mk('icon', icons.favicon64);
+      mk('apple-touch-icon', icons.icon192);
+
+      const mt = document.createElement('meta');
+      mt.name = 'theme-color';
+      mt.content = '#17102A';
+      document.head.appendChild(mt);
+
+      const am = document.createElement('meta');
+      am.name = 'apple-mobile-web-app-capable';
+      am.content = 'yes';
+      document.head.appendChild(am);
+    } catch (e) {
+      console.warn('manifest 注入失败：', e && e.message);
+    }
+  }
+
+  /** 显示环境徽标（便于用户确认检测结果） */
+  function envBadge() {
+    const info = uaInfo();
+    const el = document.getElementById('pwa-badge');
+    if (!el) return;
+    el.textContent = info.isFennec ? 'Fennec 模式' : '浏览器模式';
+    el.title = info.ua;
+    el.classList.toggle('fennec', info.isFennec);
+    el.hidden = false;
+  }
+
+  return {
+    uaInfo, isPersisted, requestPersist, quotaInfo, fmtBytes,
+    maybeAskPersist, registerSW, injectManifest, envBadge
+  };
+})();
+
+/* ---------------- 启动 ---------------- */
+
+async function bootPWA() {
+  try {
+    // 1. 注入 manifest 与图标
+    PWA.injectManifest(PWA_ICONS);
+
+    // 2. 注册 Service Worker（离线可用 + 可安装）
+    await PWA.registerSW();
+
+    // 3. 显示环境徽标
+    PWA.envBadge();
+
+    // 4. 仅 Fennec 下询问持久存储（等首屏渲染完成再弹，避免打扰）
+    const info = PWA.uaInfo();
+    if (info.isFennec) {
+      setTimeout(() => { PWA.maybeAskPersist(); }, 900);
+    }
+  } catch (e) {
+    console.warn('PWA 启动异常：', e && e.message);
+  }
+}
+</script>
+<script>
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootPWA);
+} else { bootPWA(); }
+</script>
+</body>
+</html>
